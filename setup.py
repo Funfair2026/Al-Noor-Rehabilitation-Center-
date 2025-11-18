@@ -70,12 +70,10 @@ def check_templates():
         "templates/admin_login.html",
         "templates/admin.html",
         "templates/admin_dashboard.html",
-        "templates/booth_staff.html",
         "templates/issue_coupon.html",
         "templates/recharge_coupon.html",
         "templates/check_balance.html",
-        "templates/topup_instructions.html",
-        "templates/stall_scanner.html"
+        "templates/topup_instructions.html"
     ]
     
     missing_templates = []
