@@ -79,8 +79,7 @@ def check_files():
     """Check if required files exist"""
     print("📄 Checking required files...")
     required_files = [
-        "app_sqlite.py",
-        "init_sqlite.py"
+        "app_sqlite.py"
     ]
     
     missing_files = []
@@ -103,17 +102,11 @@ def initialize_database():
     """Initialize the database if needed"""
     print("🗄️ Checking database...")
     
-    if not os.path.exists("funfair.db"):
-        print("   Database not found, initializing...")
-        try:
-            subprocess.check_call([sys.executable, "init_sqlite.py"], 
-                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            print("✅ Database initialized successfully")
-        except subprocess.CalledProcessError as e:
-            print(f"❌ Error initializing database: {e}")
-            print("   The system will try to continue anyway...")
-    else:
+    # Database will be auto-created by app_sqlite.py when it starts
+    if os.path.exists("funfair.db"):
         print("✅ Database already exists")
+    else:
+        print("✅ Database will be created automatically when server starts")
     
     return True
 

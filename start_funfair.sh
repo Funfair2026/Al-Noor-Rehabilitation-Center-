@@ -67,27 +67,13 @@ if [ ! -f "app_sqlite.py" ]; then
     exit 1
 fi
 
-if [ ! -f "init_sqlite.py" ]; then
-    echo -e "${RED}❌ init_sqlite.py not found${NC}"
-    echo "   Please ensure all files are in the same directory"
-    read -p "Press Enter to exit..."
-    exit 1
-fi
-
 echo -e "${GREEN}✅ All required files found${NC}"
 echo
 
 # Initialize database
 echo -e "${BLUE}🗄️ Checking database...${NC}"
 if [ ! -f "funfair.db" ]; then
-    echo "   Database not found, initializing..."
-    python3 init_sqlite.py
-    if [ $? -eq 0 ]; then
-        echo -e "${GREEN}✅ Database initialized successfully${NC}"
-    else
-        echo -e "${YELLOW}⚠️ Warning: Error initializing database${NC}"
-        echo "   The system will try to continue anyway..."
-    fi
+    echo -e "${GREEN}✅ Database will be created automatically when server starts${NC}"
 else
     echo -e "${GREEN}✅ Database already exists${NC}"
 fi
