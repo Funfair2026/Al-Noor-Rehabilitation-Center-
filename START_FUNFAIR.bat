@@ -39,26 +39,12 @@ if not exist "app_sqlite.py" (
     exit /b 1
 )
 
-if not exist "init_sqlite.py" (
-    echo ❌ init_sqlite.py not found
-    echo    Please ensure all files are in the same directory
-    pause
-    exit /b 1
-)
-
 echo ✅ All required files found
 echo.
 
 echo 🗄️ Checking database...
 if not exist "funfair.db" (
-    echo    Database not found, initializing...
-    python init_sqlite.py
-    if errorlevel 1 (
-        echo ❌ Error initializing database
-        echo    The system will try to continue anyway...
-    ) else (
-        echo ✅ Database initialized successfully
-    )
+    echo ✅ Database will be created automatically when server starts
 ) else (
     echo ✅ Database already exists
 )

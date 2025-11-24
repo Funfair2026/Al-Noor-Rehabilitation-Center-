@@ -16,7 +16,6 @@ matplotlib.use('Agg')  # Use non-interactive backend to prevent GUI crashes
 import matplotlib.pyplot as plt
 import hashlib
 import datetime
-import pytz
 import jwt
 import secrets
 import bcrypt
@@ -68,9 +67,9 @@ def create_table_if_not_exists():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Create visitors table
-    create_visitors_table_query = '''
-    CREATE TABLE IF NOT EXISTS visitors (
+    # Create coupons table
+    create_coupons_table_query = '''
+    CREATE TABLE IF NOT EXISTS coupons (
         ticket_id INTEGER PRIMARY KEY AUTOINCREMENT,
         full_name TEXT,
         amount REAL,
@@ -81,9 +80,9 @@ def create_table_if_not_exists():
     );
     '''
 
-    # Create topup_transactions table
-    create_topup_transactions_table_query = '''
-    CREATE TABLE IF NOT EXISTS topup_transactions (
+    # Create revenue table
+    create_revenue_table_query = '''
+    CREATE TABLE IF NOT EXISTS revenue (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         full_name TEXT NOT NULL,
         amount REAL NOT NULL,
@@ -93,9 +92,9 @@ def create_table_if_not_exists():
     );
     '''
 
-    # Create payments table
-    create_payments_table_query = '''
-    CREATE TABLE IF NOT EXISTS payments (
+    # Create counters table
+    create_counters_table_query = '''
+    CREATE TABLE IF NOT EXISTS counters (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         amount REAL NOT NULL,
@@ -105,20 +104,19 @@ def create_table_if_not_exists():
     );
     '''
 
-    # Create access_keys table
-    create_access_keys_table_query = '''
-    CREATE TABLE IF NOT EXISTS access_keys (
+    # Create authenticator table
+    create_authenticator_table_query = '''
+    CREATE TABLE IF NOT EXISTS authenticator (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user TEXT NOT NULL,
         counter TEXT,
-        pass_key TEXT NOT NULL,
-        passkey_display TEXT
+        pass_key TEXT NOT NULL
     );
     '''
 
-    # Create admins table with enhanced security fields
-    create_admins_table_query = '''
-    CREATE TABLE IF NOT EXISTS admins (
+    # Create admin table with enhanced security fields
+    create_admin_table_query = '''
+    CREATE TABLE IF NOT EXISTS admin_users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
@@ -133,9 +131,9 @@ def create_table_if_not_exists():
     '''
 
 
-    # Create audit_logs table
-    create_audit_logs_table_query = '''
-    CREATE TABLE IF NOT EXISTS audit_logs (
+    # Create system_logs table
+    create_system_logs_table_query = '''
+    CREATE TABLE IF NOT EXISTS system_logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_type TEXT NOT NULL,
         user_id TEXT,
@@ -147,38 +145,29 @@ def create_table_if_not_exists():
     '''
 
     try:
-        cursor.execute(create_visitors_table_query)
-        cursor.execute(create_topup_transactions_table_query)
-        cursor.execute(create_payments_table_query)
-        cursor.execute(create_access_keys_table_query)
-        cursor.execute(create_admins_table_query)
-        cursor.execute(create_audit_logs_table_query)
+        cursor.execute(create_coupons_table_query)
+        cursor.execute(create_revenue_table_query)
+        cursor.execute(create_counters_table_query)
+        cursor.execute(create_authenticator_table_query)
+        cursor.execute(create_admin_table_query)
+        cursor.execute(create_system_logs_table_query)
         conn.commit()
         logging.info("Database tables created successfully")
         
-        # Migrate access_keys table to add passkey_display column if needed
+        # Migrate existing admin_users table if needed
         try:
-            cursor.execute("ALTER TABLE access_keys ADD COLUMN passkey_display TEXT")
-            conn.commit()
-            logging.info("Added passkey_display column to access_keys table")
-        except sqlite3.OperationalError:
-            # Column already exists, ignore
-            pass
-        
-        # Migrate existing admins table if needed
-        try:
-            cursor.execute("PRAGMA table_info(admins)")
+            cursor.execute("PRAGMA table_info(admin_users)")
             columns = [row[1] for row in cursor.fetchall()]
             if 'failed_login_attempts' not in columns:
-                cursor.execute("ALTER TABLE admins ADD COLUMN failed_login_attempts INTEGER DEFAULT 0")
+                cursor.execute("ALTER TABLE admin_users ADD COLUMN failed_login_attempts INTEGER DEFAULT 0")
             if 'locked_until' not in columns:
-                cursor.execute("ALTER TABLE admins ADD COLUMN locked_until TIMESTAMP")
+                cursor.execute("ALTER TABLE admin_users ADD COLUMN locked_until TIMESTAMP")
             if 'last_login' not in columns:
-                cursor.execute("ALTER TABLE admins ADD COLUMN last_login TIMESTAMP")
+                cursor.execute("ALTER TABLE admin_users ADD COLUMN last_login TIMESTAMP")
             if 'created_by' not in columns:
-                cursor.execute("ALTER TABLE admins ADD COLUMN created_by TEXT")
+                cursor.execute("ALTER TABLE admin_users ADD COLUMN created_by TEXT")
             if 'is_active' not in columns:
-                cursor.execute("ALTER TABLE admins ADD COLUMN is_active INTEGER DEFAULT 1")
+                cursor.execute("ALTER TABLE admin_users ADD COLUMN is_active INTEGER DEFAULT 1")
             conn.commit()
         except sqlite3.Error:
             pass  # Table might not exist yet
@@ -263,7 +252,7 @@ def issue_coupon(full_name, amount, admin_username):
     cursor = conn.cursor()
 
     # Check if the user already exists
-    cursor.execute("SELECT * FROM visitors WHERE full_name = ?", (full_name,))
+    cursor.execute("SELECT * FROM coupons WHERE full_name = ?", (full_name,))
     existing_user = cursor.fetchone()
 
     if existing_user:
@@ -273,7 +262,7 @@ def issue_coupon(full_name, amount, admin_username):
 
     # Insert coupon details into the database (store admin_username in pin field for tracking)
     cursor.execute(
-        "INSERT INTO visitors (full_name, amount, balance, qr_code, pin) VALUES (?, ?, ?, ?, ?)",
+        "INSERT INTO coupons (full_name, amount, balance, qr_code, pin) VALUES (?, ?, ?, ?, ?)",
         (full_name, amount, amount, "", admin_username)
     )
     ticket_id = cursor.lastrowid
@@ -323,10 +312,10 @@ def issue_coupon(full_name, amount, admin_username):
     qr_img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
 
     # Update the database with the generated QR code image string
-    cursor.execute("UPDATE visitors SET qr_code = ? WHERE ticket_id = ?", (qr_img_str, ticket_id))
+    cursor.execute("UPDATE coupons SET qr_code = ? WHERE ticket_id = ?", (qr_img_str, ticket_id))
 
-    # Insert into topup_transactions table for issued coupon (store admin_username in pin field for tracking)
-    cursor.execute("INSERT INTO topup_transactions (full_name, amount, type, pin) VALUES (?, ?, 'Issue', ?)", (full_name, amount, admin_username))
+    # Insert into revenue table for issued coupon (store admin_username in pin field for tracking)
+    cursor.execute("INSERT INTO revenue (full_name, amount, type, pin) VALUES (?, ?, 'Issue', ?)", (full_name, amount, admin_username))
     conn.commit()
 
     cursor.close()
@@ -353,7 +342,7 @@ def log_activity(user_type, user_id, action, details="", ip_address=None):
             ip_address = request.remote_addr
     
     cursor.execute(
-        "INSERT INTO audit_logs (user_type, user_id, action, details, ip_address) VALUES (?, ?, ?, ?, ?)",
+        "INSERT INTO system_logs (user_type, user_id, action, details, ip_address) VALUES (?, ?, ?, ?, ?)",
         (user_type, user_id, action, enhanced_details, ip_address)
     )
     conn.commit()
@@ -384,7 +373,7 @@ def require_admin_auth(f):
             conn = get_db_connection()
             cursor = conn.cursor()
             try:
-                cursor.execute("SELECT id, is_active, locked_until FROM admins WHERE username = ?", (username,))
+                cursor.execute("SELECT id, is_active, locked_until FROM admin_users WHERE username = ?", (username,))
                 user = cursor.fetchone()
                 
                 if not user:
@@ -433,7 +422,7 @@ def require_super_admin_auth(f):
             conn = get_db_connection()
             cursor = conn.cursor()
             try:
-                cursor.execute("SELECT id, is_active, locked_until FROM admins WHERE username = ? AND role = 'super_admin'", (username,))
+                cursor.execute("SELECT id, is_active, locked_until FROM admin_users WHERE username = ? AND role = 'super_admin'", (username,))
                 user = cursor.fetchone()
                 
                 if not user:
@@ -489,7 +478,7 @@ def admin_login():
         
         try:
             # Check if user exists
-            cursor.execute("SELECT id, password_hash, role, is_active, failed_login_attempts, locked_until FROM admins WHERE username = ?", (username,))
+            cursor.execute("SELECT id, password_hash, role, is_active, failed_login_attempts, locked_until FROM admin_users WHERE username = ?", (username,))
             user = cursor.fetchone()
             
             if not user:
@@ -511,7 +500,7 @@ def admin_login():
                     return jsonify({"error": f"Account is locked. Try again in {int(remaining)} minutes."}), 403
                 else:
                     # Lock expired, reset it
-                    cursor.execute("UPDATE admins SET locked_until = NULL, failed_login_attempts = 0 WHERE username = ?", (username,))
+                    cursor.execute("UPDATE admin_users SET locked_until = NULL, failed_login_attempts = 0 WHERE username = ?", (username,))
                     conn.commit()
             
             # Verify password
@@ -525,7 +514,7 @@ def admin_login():
                 lockout_minutes = 60 if user['role'] == 'super_admin' else 30
                 if failed_attempts >= 5:
                     locked_until = (datetime.datetime.utcnow() + datetime.timedelta(minutes=lockout_minutes)).isoformat()
-                    cursor.execute("UPDATE admins SET failed_login_attempts = ?, locked_until = ? WHERE username = ?", 
+                    cursor.execute("UPDATE admin_users SET failed_login_attempts = ?, locked_until = ? WHERE username = ?", 
                                  (failed_attempts, locked_until, username))
                     if user['role'] == 'super_admin':
                         log_activity('super_admin', username, 'account_locked', 
@@ -535,14 +524,14 @@ def admin_login():
                     conn.commit()
                     return jsonify({"error": f"Account locked due to too many failed attempts. Try again in {lockout_minutes} minutes."}), 403
                 else:
-                    cursor.execute("UPDATE admins SET failed_login_attempts = ? WHERE username = ?", (failed_attempts, username))
+                    cursor.execute("UPDATE admin_users SET failed_login_attempts = ? WHERE username = ?", (failed_attempts, username))
                 
                 conn.commit()
                 log_activity('admin', username, 'login_failed', f'Failed login attempt ({failed_attempts}/5)')
                 return jsonify({"error": "Invalid credentials"}), 401
             
             # Successful login - reset failed attempts and update last_login
-            cursor.execute("UPDATE admins SET failed_login_attempts = 0, locked_until = NULL, last_login = ? WHERE username = ?", 
+            cursor.execute("UPDATE admin_users SET failed_login_attempts = 0, locked_until = NULL, last_login = ? WHERE username = ?", 
                          (datetime.datetime.utcnow().isoformat(), username))
             conn.commit()
             
@@ -581,7 +570,7 @@ def admin_login():
         if hasattr(e, 'status_code') and e.status_code == 429:
             return jsonify({"error": "Too many login attempts. Please wait a few minutes and try again."}), 429
         logging.error(f"Login error: {e}")
-        return jsonify({"error": "Server error. Please try again."}), 500
+        return jsonify({"error": "Server error"}), 500
 
 # Admin sign out route
 @app.route('/api/admin/signout', methods=['POST'])
@@ -589,31 +578,20 @@ def admin_signout():
     """Sign out admin user and log the action"""
     try:
         token = request.headers.get('Authorization', '').replace('Bearer ', '')
+        if not token:
+            return jsonify({"success": True, "message": "Signed out"})
         
-        if token:
-            try:
-                payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
-                username = payload.get('username')
-                role = payload.get('role', 'admin')
-                
-                # Log sign out action
-                log_activity(role, username, 'logout', 'Admin signed out', request.remote_addr)
-            except jwt.ExpiredSignatureError:
-                # Token expired, but still allow sign out
-                pass
-            except jwt.InvalidTokenError:
-                # Invalid token, but still allow sign out
-                pass
-        
-        # Clear session
-        session.pop('admin_token', None)
+        try:
+            payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+            username = payload.get('username')
+            log_activity('admin', username, 'signout', 'Admin signed out')
+        except:
+            pass  # Token might be expired, that's okay
         
         return jsonify({"success": True, "message": "Signed out successfully"})
-        
     except Exception as e:
         logging.error(f"Sign out error: {e}")
-        # Still return success to allow client-side cleanup
-        return jsonify({"success": True, "message": "Signed out successfully"})
+        return jsonify({"success": True, "message": "Signed out"})  # Always return success
 
 # QR Scanner route
 @app.route('/qr_scanner')
@@ -637,7 +615,7 @@ def check_balance_by_ticket():
     cursor = conn.cursor()
     
     try:
-        cursor.execute("SELECT full_name, balance FROM visitors WHERE ticket_id = ?", (ticket_id,))
+        cursor.execute("SELECT full_name, balance FROM coupons WHERE ticket_id = ?", (ticket_id,))
         result = cursor.fetchone()
         
         if result:
@@ -674,14 +652,14 @@ def scan_for_payment():
     
     try:
         # Check if ticket exists and get details
-        cursor.execute("SELECT ticket_id, full_name, balance, issue_date FROM visitors WHERE ticket_id = ?", (ticket_id,))
+        cursor.execute("SELECT ticket_id, full_name, balance, issue_date FROM coupons WHERE ticket_id = ?", (ticket_id,))
         result = cursor.fetchone()
         
         if result:
             ticket_id, visitor_name, balance, issue_date = result
             
             # Get list of stalls for authentication
-            cursor.execute("SELECT user, pass_key FROM access_keys ORDER BY user")
+            cursor.execute("SELECT user, pass_key FROM authenticator ORDER BY user")
             stalls = [{"name": row[0], "passkey": row[1]} for row in cursor.fetchall()]
             
             log_activity('corporates', 'system', 'qr_scanned', f'QR scanned for {visitor_name}, balance: {balance}')
@@ -728,21 +706,21 @@ def dashboard_data():
     
     try:
         # Total revenue (from both issues and top-ups)
-        cursor.execute("SELECT SUM(amount) FROM topup_transactions")
+        cursor.execute("SELECT SUM(amount) FROM revenue")
         total_revenue = cursor.fetchone()[0] or 0
         
         # QR codes issued today
-        cursor.execute("SELECT COUNT(*) FROM visitors WHERE date(issue_date) = date('now')")
+        cursor.execute("SELECT COUNT(*) FROM coupons WHERE date(issue_date) = date('now')")
         qr_codes_today = cursor.fetchone()[0]
         
         # Top-ups today
-        cursor.execute("SELECT COUNT(*) FROM topup_transactions WHERE type = 'Top up' AND date(created_at) = date('now')")
+        cursor.execute("SELECT COUNT(*) FROM revenue WHERE type = 'Top up' AND date(created_at) = date('now')")
         topups_today = cursor.fetchone()[0]
         
         # Recent transactions
         cursor.execute("""
             SELECT c.name, c.amount, c.customer, c.time 
-            FROM payments c 
+            FROM counters c 
             ORDER BY c.time DESC 
             LIMIT 10
         """)
@@ -757,7 +735,7 @@ def dashboard_data():
                 sl.details,
                 sl.timestamp,
                 sl.ip_address
-            FROM audit_logs sl
+            FROM system_logs sl
             WHERE sl.action IN ('issue_coupon', 'topup_coupon', 'process_payment', 'admin_create_visitor')
             ORDER BY sl.timestamp DESC
             LIMIT 15
@@ -767,7 +745,7 @@ def dashboard_data():
         # Revenue by hour (last 24 hours)
         cursor.execute("""
             SELECT strftime('%H', time) as hour, SUM(amount) as total
-            FROM payments 
+            FROM counters 
             WHERE time >= datetime('now', '-24 hours')
             GROUP BY strftime('%H', time)
             ORDER BY hour
@@ -794,12 +772,11 @@ def dashboard_data():
 @app.route('/issue_coupon', methods=['POST'])
 @require_admin_auth
 def issue_coupon_route():
-    # Get admin username and role from JWT token
+    # Get admin username from JWT token
     token = request.headers.get('Authorization', '').replace('Bearer ', '')
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         admin_username = payload.get('username')
-        admin_role = payload.get('role', 'admin')  # Get role from token, default to 'admin'
     except:
         return jsonify({"error": "Invalid token"}), 401
     
@@ -819,8 +796,8 @@ def issue_coupon_route():
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
 
-    # Log the activity with correct role
-    log_activity(admin_role, admin_username, 'issue_coupon', f'Issued coupon for {full_name}, amount: {amount}')
+    # Log the activity
+    log_activity('admin', admin_username, 'issue_coupon', f'Issued coupon for {full_name}, amount: {amount}')
     
     return jsonify({
         "message": "Coupon issued successfully",
@@ -831,12 +808,11 @@ def issue_coupon_route():
 @app.route('/topup_coupon', methods=['POST'])
 @require_admin_auth
 def topup_coupon():
-    # Get admin username and role from JWT token
+    # Get admin username from JWT token
     token = request.headers.get('Authorization', '').replace('Bearer ', '')
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         admin_username = payload.get('username')
-        admin_role = payload.get('role', 'admin')  # Get role from token, default to 'admin'
     except:
         return jsonify({"error": "Invalid token"}), 401
     
@@ -856,26 +832,26 @@ def topup_coupon():
     cursor = conn.cursor()
 
     try:
-        # Check if the provided name exists in the visitors table
-        cursor.execute("SELECT * FROM visitors WHERE full_name = ?", (full_name,))
-        visitors_result = cursor.fetchall()
-        if not visitors_result:
+        # Check if the provided name exists in the coupons table
+        cursor.execute("SELECT * FROM coupons WHERE full_name = ?", (full_name,))
+        coupons_result = cursor.fetchall()
+        if not coupons_result:
             return jsonify({"success": False, "message": "Coupon not found for the provided name."}), 404
 
         # Fetch current balance before update
-        cursor.execute("SELECT balance FROM visitors WHERE full_name = ?", (full_name,))
+        cursor.execute("SELECT balance FROM coupons WHERE full_name = ?", (full_name,))
         current_balance_row = cursor.fetchone()
         current_balance = float(current_balance_row[0]) if current_balance_row else 0.0
 
         # Update the coupon balance
-        cursor.execute("UPDATE visitors SET balance = balance + ? WHERE full_name = ?", (amount_to_add, full_name))
+        cursor.execute("UPDATE coupons SET balance = balance + ? WHERE full_name = ?", (amount_to_add, full_name))
 
-        # Insert into topup_transactions table (store admin_username in pin field for tracking)
-        cursor.execute("INSERT INTO topup_transactions (full_name, amount, pin, type) VALUES (?, ?, ?, 'Top up')", (full_name, amount_to_add, admin_username))
+        # Insert into revenue table (store admin_username in pin field for tracking)
+        cursor.execute("INSERT INTO revenue (full_name, amount, pin, type) VALUES (?, ?, ?, 'Top up')", (full_name, amount_to_add, admin_username))
         conn.commit()
 
-        # Log the activity with correct role
-        log_activity(admin_role, admin_username, 'topup_coupon', f'Recharged {full_name} with AED {amount_to_add}')
+        # Log the activity
+        log_activity('admin', admin_username, 'topup_coupon', f'Recharged {full_name} with AED {amount_to_add}')
 
         new_balance = current_balance + amount_to_add
         return jsonify({
@@ -907,9 +883,9 @@ def check_balance_page():
         try:
             # Try by ticket_id first if numeric
             if str(ticket_id_or_name).isdigit():
-                cursor.execute("SELECT ticket_id, full_name, balance, issue_date FROM visitors WHERE ticket_id = ?", (ticket_id_or_name,))
+                cursor.execute("SELECT ticket_id, full_name, balance, issue_date FROM coupons WHERE ticket_id = ?", (ticket_id_or_name,))
             else:
-                cursor.execute("SELECT ticket_id, full_name, balance, issue_date FROM visitors WHERE full_name = ?", (ticket_id_or_name,))
+                cursor.execute("SELECT ticket_id, full_name, balance, issue_date FROM coupons WHERE full_name = ?", (ticket_id_or_name,))
             result = cursor.fetchone()
             if not result:
                 return jsonify({"error": "Coupon not found."}), 404
@@ -937,9 +913,9 @@ def check_balance_page():
                 conn = get_db_connection()
                 cursor = conn.cursor()
                 if str(full_name).isdigit():
-                    cursor.execute("SELECT balance FROM visitors WHERE ticket_id = ?", (full_name,))
+                    cursor.execute("SELECT balance FROM coupons WHERE ticket_id = ?", (full_name,))
                 else:
-                    cursor.execute("SELECT balance FROM visitors WHERE full_name = ?", (full_name,))
+                    cursor.execute("SELECT balance FROM coupons WHERE full_name = ?", (full_name,))
                 result = cursor.fetchone()
                 if result:
                     balance = result[0]
@@ -961,7 +937,7 @@ def deduct_balance():
         cursor = conn.cursor()
 
         try:
-            cursor.execute("SELECT balance FROM visitors WHERE ticket_id = ?", (ticket_id,))
+            cursor.execute("SELECT balance FROM coupons WHERE ticket_id = ?", (ticket_id,))
             result = cursor.fetchone()
             balance = result[0] if result else None
 
@@ -982,14 +958,14 @@ def deduct_balance():
 
     try:
         # Fetch the selected counter based on the user
-        cursor.execute("SELECT counter FROM access_keys WHERE user = ?", (user,))
+        cursor.execute("SELECT counter FROM authenticator WHERE user = ?", (user,))
         counter_result = cursor.fetchone()
         selected_counter = counter_result[0] if counter_result else None
 
         logging.info(f"Received deduct request for ticket_id: {ticket_id}, amount: {amount_to_deduct}, counter: {selected_counter}, user: {user}")
 
         # Fetch the current balance
-        cursor.execute("SELECT balance FROM visitors WHERE ticket_id = ?", (ticket_id,))
+        cursor.execute("SELECT balance FROM coupons WHERE ticket_id = ?", (ticket_id,))
         result = cursor.fetchone()
 
         if result:
@@ -998,26 +974,26 @@ def deduct_balance():
 
             if current_balance >= amount_to_deduct:
                 new_balance = current_balance - amount_to_deduct
-                cursor.execute("UPDATE visitors SET balance = ? WHERE ticket_id = ?", (new_balance, ticket_id))
+                cursor.execute("UPDATE coupons SET balance = ? WHERE ticket_id = ?", (new_balance, ticket_id))
                 conn.commit()
 
                 # Fetch the customer's name based on ticket_id
-                cursor.execute("SELECT full_name FROM visitors WHERE ticket_id = ?", (ticket_id,))
+                cursor.execute("SELECT full_name FROM coupons WHERE ticket_id = ?", (ticket_id,))
                 customer_result = cursor.fetchone()
                 customer_name = customer_result[0] if customer_result else None
 
                 if selected_counter:
-                    # Insert into payments table with time automatically captured
+                    # Insert into counters table with time automatically captured
                     cursor.execute(
                         """
-                        INSERT INTO payments (name, amount, staff, customer) 
+                        INSERT INTO counters (name, amount, staff, customer) 
                         VALUES (?, ?, ?, ?)
                         """,
                         (selected_counter, amount_to_deduct, user, customer_name)
                     )
                     conn.commit()
                 else:
-                    logging.warning(f"No counter found for user: {user}. Not inserting into payments table.")
+                    logging.warning(f"No counter found for user: {user}. Not inserting into counters table.")
 
                 return jsonify({
                     "success": True,
@@ -1046,7 +1022,7 @@ def end_transaction():
     cursor = conn.cursor()
     
     # Fetch the counter associated with the user
-    cursor.execute("SELECT counter FROM access_keys WHERE user = ?", (user,))
+    cursor.execute("SELECT counter FROM authenticator WHERE user = ?", (user,))
     counter = cursor.fetchone()
     
     if counter:
@@ -1069,8 +1045,8 @@ def authenticator():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Fetch all users from the access_keys table
-    cursor.execute("SELECT user FROM access_keys ORDER BY user ASC")
+    # Fetch all users from the authenticator table
+    cursor.execute("SELECT user FROM authenticator ORDER BY user ASC")
     users = cursor.fetchall()
     
     cursor.close()
@@ -1088,7 +1064,7 @@ def validate_passkey():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT pass_key FROM access_keys WHERE user = ?", (user,))
+    cursor.execute("SELECT pass_key FROM authenticator WHERE user = ?", (user,))
     result = cursor.fetchone()
 
     if result and result[0] == pass_key:
@@ -1110,15 +1086,15 @@ def process_payment():
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        # Resolve user and counter by passkey (plain text comparison)
-        cursor.execute("SELECT user, counter FROM access_keys WHERE pass_key = ?", (passkey,))
+        # Resolve user and counter by passkey
+        cursor.execute("SELECT user, counter FROM authenticator WHERE pass_key = ?", (passkey,))
         auth_row = cursor.fetchone()
         if not auth_row:
             return jsonify({"error": "Invalid passkey"}), 403
         user, counter = auth_row
 
         # Fetch current balance and customer name
-        cursor.execute("SELECT balance, full_name FROM visitors WHERE ticket_id = ?", (ticket_id,))
+        cursor.execute("SELECT balance, full_name FROM coupons WHERE ticket_id = ?", (ticket_id,))
         row = cursor.fetchone()
         if not row:
             return jsonify({"error": "Coupon not found."}), 404
@@ -1129,8 +1105,8 @@ def process_payment():
 
         # Deduct and log transaction
         new_balance = float(current_balance) - amount_to_deduct
-        cursor.execute("UPDATE visitors SET balance = ? WHERE ticket_id = ?", (new_balance, ticket_id))
-        cursor.execute("INSERT INTO payments (name, amount, staff, customer) VALUES (?, ?, ?, ?)", (counter, amount_to_deduct, user, customer_name))
+        cursor.execute("UPDATE coupons SET balance = ? WHERE ticket_id = ?", (new_balance, ticket_id))
+        cursor.execute("INSERT INTO counters (name, amount, staff, customer) VALUES (?, ?, ?, ?)", (counter, amount_to_deduct, user, customer_name))
         conn.commit()
 
         # Log the payment activity
@@ -1152,14 +1128,14 @@ def process_payment():
         conn.close()
 
 @app.route('/api/system_logs')
-@require_super_admin_auth
+@require_admin_auth
 def api_system_logs():
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
         cursor.execute("""
             SELECT timestamp, user_type, user_id, action, details, ip_address
-            FROM audit_logs
+            FROM system_logs
             ORDER BY timestamp DESC
             LIMIT 200
         """)
@@ -1187,159 +1163,235 @@ def api_system_logs():
 def generate_reports():
     return render_template('generate_reports.html')
 
+@app.route('/admin/view-visitor-qrcodes')
+@require_admin_page_auth
+def view_visitor_qrcodes_page():
+    return render_template('view_visitor_qrcodes.html')
+
+@app.route('/generate_counters_report', methods=['GET'])
+@require_admin_auth
+def generate_counters_report():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT name, amount FROM counters")
+        data = cursor.fetchall()
+
+        if not data:
+            return jsonify({"error": "No data available for counters."}), 404
+
+        df = pd.DataFrame(data, columns=['Name', 'Amount'])
+        excel_filename = "counters_report.xlsx"
+        df.to_excel(excel_filename, index=False)
+
+        plt.figure(figsize=(10, 6))
+        plt.bar(df['Name'], df['Amount'], color='blue')
+        plt.title('Counters Revenue Report')
+        plt.xlabel('Name')
+        plt.ylabel('Amount')
+        plt.xticks(rotation=45)
+        chart_filename = "counters_chart.png"
+        plt.savefig(chart_filename)
+        plt.close()
+
+        zip_filename = "counters_report.zip"
+        with zipfile.ZipFile(zip_filename, 'w') as zipf:
+            zipf.write(excel_filename)
+            zipf.write(chart_filename)
+
+        return send_file(zip_filename, as_attachment=True)
+
+    except sqlite3.Error as err:
+        logging.error(f"Database error: {err}")
+        return jsonify({"error": "Database error occurred."}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/generate_total_revenue_report', methods=['GET'])
+@require_admin_auth
+def generate_total_revenue_report():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT amount, type FROM revenue")
+        revenue_data = cursor.fetchall()
+
+        if not revenue_data:
+            return jsonify({"error": "No data available for revenue."}), 404
+
+        # Create a DataFrame
+        df_revenue = pd.DataFrame(revenue_data, columns=['Amount', 'Type'])
+
+        # Convert 'Amount' column to numeric, forcing errors to NaN
+        df_revenue['Amount'] = pd.to_numeric(df_revenue['Amount'], errors='coerce')
+
+        # Check for NaN values
+        if df_revenue['Amount'].isnull().all():
+            return jsonify({"error": "No valid numeric data to plot."}), 400
+
+        # Generate Excel file
+        revenue_excel_path = 'total_revenue_report.xlsx'
+        df_revenue.to_excel(revenue_excel_path, index=False)
+
+        # Create a bar chart
+        plt.figure(figsize=(10, 6))
+        df_revenue.groupby('Type')['Amount'].sum().plot(kind='bar', color='orange')
+        plt.xlabel('Revenue Type')
+        plt.ylabel('Total Amount')
+        plt.title('Total Revenue by Type')
+        plt.tight_layout()
+        chart_path = 'total_revenue_chart.png'
+        plt.savefig(chart_path)
+        plt.close()
+
+        # Create a zip file
+        zip_filename = 'total_revenue_report.zip'
+        with zipfile.ZipFile(zip_filename, 'w') as zipf:
+            zipf.write(revenue_excel_path)
+            zipf.write(chart_path)
+
+        return send_file(zip_filename, as_attachment=True)
+
+    except sqlite3.Error as err:
+        logging.error(f"Database error: {err}")
+        return jsonify({"error": "Database error occurred."}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+# Generate comprehensive user report
 @app.route('/generate_comprehensive_report', methods=['GET'])
 @require_admin_auth
 def generate_comprehensive_report():
     """Generate a comprehensive Excel report with all user data"""
     try:
+        from io import BytesIO
+        from datetime import datetime
+        import pytz
+        
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Create Excel writer object
-        excel_filename = "comprehensive_user_report.xlsx"
-        with pd.ExcelWriter(excel_filename, engine='openpyxl') as writer:
-            
+        # Create Excel writer in memory
+        output = BytesIO()
+        uae_tz = pytz.timezone('Asia/Dubai')
+        
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
             # 1. Visitors (Coupons) Sheet - Enhanced with more details
             cursor.execute("""
-                SELECT ticket_id, full_name, amount, balance, issue_date, pin as issued_by,
-                       CASE 
-                           WHEN balance > amount THEN 0
-                           ELSE ROUND((amount - balance), 2)
-                       END as total_spent,
-                       CASE 
-                           WHEN balance > amount THEN 0
-                           ELSE ROUND(((amount - balance) / amount * 100), 2)
-                       END as percentage_used,
-                       ROUND(julianday('now') - julianday(issue_date), 1) as days_since_issue
-                FROM visitors
+                SELECT ticket_id, full_name, amount, balance, issue_date, pin
+                FROM coupons
                 ORDER BY issue_date DESC
             """)
             visitors_data = cursor.fetchall()
             if visitors_data:
                 df_visitors = pd.DataFrame(visitors_data, columns=[
-                    'Ticket ID', 'Full Name', 'Initial Amount', 'Current Balance', 'Issue Date', 'Issued By',
-                    'Total Spent (AED)', 'Percentage Used (%)', 'Days Since Issue'
+                    'Ticket ID', 'Full Name', 'Initial Amount', 'Current Balance', 'Issue Date', 'Issued By Admin'
                 ])
-                # Convert Issue Date to UAE timezone
+                # Convert issue_date to UAE timezone if needed
                 if 'Issue Date' in df_visitors.columns:
                     df_visitors['Issue Date'] = pd.to_datetime(df_visitors['Issue Date'], errors='coerce')
-                    uae_tz = pytz.timezone('Asia/Dubai')
-                    # Handle timezone conversion - assume UTC if no timezone info
-                    if df_visitors['Issue Date'].dt.tz is None:
-                        df_visitors['Issue Date'] = df_visitors['Issue Date'].dt.tz_localize('UTC')
-                    df_visitors['Issue Date'] = df_visitors['Issue Date'].dt.tz_convert(uae_tz)
-                    df_visitors['Issue Date'] = df_visitors['Issue Date'].dt.strftime('%Y-%m-%d %H:%M:%S')
+                    if df_visitors['Issue Date'].notna().any():
+                        if df_visitors['Issue Date'].dt.tz is None:
+                            df_visitors['Issue Date'] = df_visitors['Issue Date'].dt.tz_localize('UTC')
+                        df_visitors['Issue Date'] = df_visitors['Issue Date'].dt.tz_convert(uae_tz)
+                        df_visitors['Issue Date'] = df_visitors['Issue Date'].dt.strftime('%Y-%m-%d %H:%M:%S')
                 df_visitors.to_excel(writer, sheet_name='Visitors', index=False)
             else:
-                # Create empty sheet with headers
                 df_visitors = pd.DataFrame(columns=[
-                    'Ticket ID', 'Full Name', 'Initial Amount', 'Current Balance', 'Issue Date', 'Issued By',
-                    'Total Spent (AED)', 'Percentage Used (%)', 'Days Since Issue'
+                    'Ticket ID', 'Full Name', 'Initial Amount', 'Current Balance', 'Issue Date', 'Issued By Admin'
                 ])
                 df_visitors.to_excel(writer, sheet_name='Visitors', index=False)
             
-            # 2. Revenue Transactions Sheet - Enhanced with transaction ID and ticket ID
+            # 2. Revenue Transactions Sheet
             cursor.execute("""
-                SELECT r.id as transaction_id, r.full_name, r.amount, r.type, r.pin as admin, r.created_at,
-                       c.ticket_id, c.balance as current_balance
-                FROM topup_transactions r
-                LEFT JOIN visitors c ON r.full_name = c.full_name
+                SELECT r.full_name, r.amount, r.type, r.pin, r.created_at, c.ticket_id
+                FROM revenue r
+                LEFT JOIN coupons c ON r.full_name = c.full_name
                 ORDER BY r.created_at DESC
             """)
             revenue_data = cursor.fetchall()
             if revenue_data:
                 df_revenue = pd.DataFrame(revenue_data, columns=[
-                    'Transaction ID', 'Visitor Name', 'Ticket ID', 'Amount (AED)', 'Type', 'Admin', 
-                    'Current Balance (AED)', 'Date'
+                    'Visitor Name', 'Amount (AED)', 'Type', 'Admin', 'Date', 'Ticket ID'
                 ])
-                # Convert Date to UAE timezone
                 if 'Date' in df_revenue.columns:
                     df_revenue['Date'] = pd.to_datetime(df_revenue['Date'], errors='coerce')
-                    uae_tz = pytz.timezone('Asia/Dubai')
-                    if df_revenue['Date'].dt.tz is None:
-                        df_revenue['Date'] = df_revenue['Date'].dt.tz_localize('UTC')
-                    df_revenue['Date'] = df_revenue['Date'].dt.tz_convert(uae_tz)
-                    df_revenue['Date'] = df_revenue['Date'].dt.strftime('%Y-%m-%d %H:%M:%S')
+                    if df_revenue['Date'].notna().any():
+                        if df_revenue['Date'].dt.tz is None:
+                            df_revenue['Date'] = df_revenue['Date'].dt.tz_localize('UTC')
+                        df_revenue['Date'] = df_revenue['Date'].dt.tz_convert(uae_tz)
+                        df_revenue['Date'] = df_revenue['Date'].dt.strftime('%Y-%m-%d %H:%M:%S')
                 df_revenue.to_excel(writer, sheet_name='Revenue Transactions', index=False)
             else:
                 df_revenue = pd.DataFrame(columns=[
-                    'Transaction ID', 'Visitor Name', 'Ticket ID', 'Amount (AED)', 'Type', 'Admin', 
-                    'Current Balance (AED)', 'Date'
+                    'Visitor Name', 'Amount (AED)', 'Type', 'Admin', 'Date', 'Ticket ID'
                 ])
                 df_revenue.to_excel(writer, sheet_name='Revenue Transactions', index=False)
             
-            # 3. Counter Transactions (Payments) Sheet - Enhanced with transaction ID and ticket ID
+            # 3. Counter Transactions Sheet
             cursor.execute("""
-                SELECT cnt.id as transaction_id, cnt.name as counter_name, cnt.amount, cnt.staff, 
+                SELECT cnt.name, cnt.amount, cnt.staff, 
                        cnt.customer, cnt.time, c.ticket_id, c.balance as visitor_balance
-                FROM payments cnt
-                LEFT JOIN visitors c ON cnt.customer = c.full_name
+                FROM counters cnt
+                LEFT JOIN coupons c ON cnt.customer = c.full_name
                 ORDER BY cnt.time DESC
             """)
-            counters_data = cursor.fetchall()
-            if counters_data:
-                df_counters = pd.DataFrame(counters_data, columns=[
-                    'Transaction ID', 'Counter Name', 'Amount (AED)', 'Staff', 'Customer', 
-                    'Ticket ID', 'Visitor Balance (AED)', 'Time'
+            counter_data = cursor.fetchall()
+            if counter_data:
+                df_counters = pd.DataFrame(counter_data, columns=[
+                    'Counter Name', 'Amount (AED)', 'Staff', 'Customer', 'Time', 
+                    'Ticket ID', 'Visitor Balance (AED)'
                 ])
-                # Convert Time to UAE timezone
                 if 'Time' in df_counters.columns:
                     df_counters['Time'] = pd.to_datetime(df_counters['Time'], errors='coerce')
-                    uae_tz = pytz.timezone('Asia/Dubai')
-                    if df_counters['Time'].dt.tz is None:
-                        df_counters['Time'] = df_counters['Time'].dt.tz_localize('UTC')
-                    df_counters['Time'] = df_counters['Time'].dt.tz_convert(uae_tz)
-                    df_counters['Time'] = df_counters['Time'].dt.strftime('%Y-%m-%d %H:%M:%S')
+                    if df_counters['Time'].notna().any():
+                        if df_counters['Time'].dt.tz is None:
+                            df_counters['Time'] = df_counters['Time'].dt.tz_localize('UTC')
+                        df_counters['Time'] = df_counters['Time'].dt.tz_convert(uae_tz)
+                        df_counters['Time'] = df_counters['Time'].dt.strftime('%Y-%m-%d %H:%M:%S')
                 df_counters.to_excel(writer, sheet_name='Counter Transactions', index=False)
             else:
                 df_counters = pd.DataFrame(columns=[
-                    'Transaction ID', 'Counter Name', 'Amount (AED)', 'Staff', 'Customer', 
-                    'Ticket ID', 'Visitor Balance (AED)', 'Time'
+                    'Counter Name', 'Amount (AED)', 'Staff', 'Customer', 'Time', 
+                    'Ticket ID', 'Visitor Balance (AED)'
                 ])
                 df_counters.to_excel(writer, sheet_name='Counter Transactions', index=False)
             
-            # 4. Admin Users Sheet - Enhanced with security details
+            # 4. Admin Users Sheet
             cursor.execute("""
-                SELECT username, role, last_login, created_at, is_active, created_by,
-                       failed_login_attempts,
-                       CASE WHEN locked_until IS NOT NULL AND datetime(locked_until) > datetime('now') 
-                            THEN 'Locked' ELSE 'Active' END as account_status,
-                       ROUND(julianday('now') - julianday(created_at), 1) as account_age_days
-                FROM admins
+                SELECT username, role, last_login, created_at, is_active, created_by
+                FROM admin_users
                 ORDER BY created_at DESC
             """)
             admin_data = cursor.fetchall()
             if admin_data:
                 df_admins = pd.DataFrame(admin_data, columns=[
-                    'Username', 'Role', 'Last Login', 'Created At', 'Is Active', 'Created By',
-                    'Failed Login Attempts', 'Account Status', 'Account Age (Days)'
+                    'Username', 'Role', 'Last Login', 'Created Date', 'Status', 'Created By'
                 ])
-                # Convert timestamps to UAE timezone
-                uae_tz = pytz.timezone('Asia/Dubai')
-                if 'Last Login' in df_admins.columns:
-                    df_admins['Last Login'] = pd.to_datetime(df_admins['Last Login'], errors='coerce')
-                    if df_admins['Last Login'].dt.tz is None:
-                        df_admins['Last Login'] = df_admins['Last Login'].dt.tz_localize('UTC')
-                    df_admins['Last Login'] = df_admins['Last Login'].dt.tz_convert(uae_tz)
-                    df_admins['Last Login'] = df_admins['Last Login'].dt.strftime('%Y-%m-%d %H:%M:%S')
-                if 'Created At' in df_admins.columns:
-                    df_admins['Created At'] = pd.to_datetime(df_admins['Created At'], errors='coerce')
-                    if df_admins['Created At'].dt.tz is None:
-                        df_admins['Created At'] = df_admins['Created At'].dt.tz_localize('UTC')
-                    df_admins['Created At'] = df_admins['Created At'].dt.tz_convert(uae_tz)
-                    df_admins['Created At'] = df_admins['Created At'].dt.strftime('%Y-%m-%d %H:%M:%S')
+                # Format status
+                df_admins['Status'] = df_admins['Status'].apply(lambda x: 'Active' if x == 1 else 'Inactive')
+                # Format dates
+                for col in ['Last Login', 'Created Date']:
+                    if col in df_admins.columns:
+                        df_admins[col] = pd.to_datetime(df_admins[col], errors='coerce')
+                        if df_admins[col].notna().any():
+                            if df_admins[col].dt.tz is None:
+                                df_admins[col] = df_admins[col].dt.tz_localize('UTC')
+                            df_admins[col] = df_admins[col].dt.tz_convert(uae_tz)
+                            df_admins[col] = df_admins[col].dt.strftime('%Y-%m-%d %H:%M:%S')
                 df_admins.to_excel(writer, sheet_name='Admin Users', index=False)
             else:
                 df_admins = pd.DataFrame(columns=[
-                    'Username', 'Role', 'Last Login', 'Created At', 'Is Active', 'Created By',
-                    'Failed Login Attempts', 'Account Status', 'Account Age (Days)'
+                    'Username', 'Role', 'Last Login', 'Created Date', 'Status', 'Created By'
                 ])
                 df_admins.to_excel(writer, sheet_name='Admin Users', index=False)
             
             # 5. System Logs Sheet
             cursor.execute("""
                 SELECT user_type, user_id, action, details, ip_address, timestamp
-                FROM audit_logs
+                FROM system_logs
                 ORDER BY timestamp DESC
             """)
             logs_data = cursor.fetchall()
@@ -1347,14 +1399,13 @@ def generate_comprehensive_report():
                 df_logs = pd.DataFrame(logs_data, columns=[
                     'User Type', 'User ID', 'Action', 'Details', 'IP Address', 'Timestamp'
                 ])
-                # Convert Timestamp to UAE timezone
                 if 'Timestamp' in df_logs.columns:
                     df_logs['Timestamp'] = pd.to_datetime(df_logs['Timestamp'], errors='coerce')
-                    uae_tz = pytz.timezone('Asia/Dubai')
-                    if df_logs['Timestamp'].dt.tz is None:
-                        df_logs['Timestamp'] = df_logs['Timestamp'].dt.tz_localize('UTC')
-                    df_logs['Timestamp'] = df_logs['Timestamp'].dt.tz_convert(uae_tz)
-                    df_logs['Timestamp'] = df_logs['Timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
+                    if df_logs['Timestamp'].notna().any():
+                        if df_logs['Timestamp'].dt.tz is None:
+                            df_logs['Timestamp'] = df_logs['Timestamp'].dt.tz_localize('UTC')
+                        df_logs['Timestamp'] = df_logs['Timestamp'].dt.tz_convert(uae_tz)
+                        df_logs['Timestamp'] = df_logs['Timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
                 df_logs.to_excel(writer, sheet_name='System Logs', index=False)
             else:
                 df_logs = pd.DataFrame(columns=[
@@ -1362,105 +1413,62 @@ def generate_comprehensive_report():
                 ])
                 df_logs.to_excel(writer, sheet_name='System Logs', index=False)
             
-            # 6. Summary Sheet - Enhanced with more statistics
-            cursor.execute("SELECT COUNT(*) FROM visitors")
+            # 6. Summary Sheet
+            cursor.execute("SELECT COUNT(*) FROM coupons")
             total_visitors = cursor.fetchone()[0]
             
-            cursor.execute("SELECT SUM(amount) FROM topup_transactions WHERE type = 'Issue'")
+            cursor.execute("SELECT SUM(amount) FROM revenue WHERE type = 'Issue'")
             total_issued = cursor.fetchone()[0] or 0
             
-            cursor.execute("SELECT SUM(amount) FROM topup_transactions WHERE type = 'Top up'")
+            cursor.execute("SELECT SUM(amount) FROM revenue WHERE type = 'Top up'")
             total_topup = cursor.fetchone()[0] or 0
             
-            cursor.execute("SELECT SUM(amount) FROM payments")
+            cursor.execute("SELECT SUM(amount) FROM counters")
             total_payments = cursor.fetchone()[0] or 0
             
-            cursor.execute("SELECT COUNT(*) FROM admins")
+            cursor.execute("SELECT COUNT(*) FROM admin_users")
             total_admins = cursor.fetchone()[0]
             
-            cursor.execute("SELECT AVG(balance) FROM visitors WHERE balance IS NOT NULL")
-            avg_balance = cursor.fetchone()[0] or 0
-            
-            cursor.execute("SELECT SUM(amount - balance) FROM visitors WHERE balance IS NOT NULL")
-            total_spent = cursor.fetchone()[0] or 0
-            
-            cursor.execute("SELECT COUNT(*) FROM topup_transactions")
-            total_revenue_transactions = cursor.fetchone()[0]
-            
-            cursor.execute("SELECT COUNT(*) FROM payments")
-            total_payment_transactions = cursor.fetchone()[0]
-            
-            cursor.execute("""
-                SELECT customer, COUNT(*) as transaction_count 
-                FROM payments 
-                WHERE customer IS NOT NULL
-                GROUP BY customer 
-                ORDER BY transaction_count DESC 
-                LIMIT 1
-            """)
-            most_active = cursor.fetchone()
-            most_active_visitor = most_active[0] if most_active else 'N/A'
-            most_active_count = most_active[1] if most_active else 0
-            
-            cursor.execute("""
-                SELECT customer, SUM(amount) as total_spent 
-                FROM payments 
-                WHERE customer IS NOT NULL
-                GROUP BY customer 
-                ORDER BY total_spent DESC 
-                LIMIT 1
-            """)
-            top_spender = cursor.fetchone()
-            top_spender_name = top_spender[0] if top_spender else 'N/A'
-            top_spender_amount = top_spender[1] if top_spender else 0
-            
-            cursor.execute("SELECT COUNT(*) FROM visitors WHERE qr_code IS NOT NULL AND qr_code != ''")
-            visitors_with_qr = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) FROM system_logs")
+            total_logs = cursor.fetchone()[0]
             
             summary_data = {
                 'Metric': [
                     'Total Visitors',
-                    'Visitors with QR Codes',
                     'Total Amount Issued (AED)',
                     'Total Amount Top-up (AED)',
                     'Total Payments (AED)',
-                    'Total Spent by Visitors (AED)',
-                    'Average Visitor Balance (AED)',
-                    'Total Revenue Transactions',
-                    'Total Payment Transactions',
-                    'Most Active Visitor',
-                    'Most Active Visitor Transactions',
-                    'Top Spender',
-                    'Top Spender Amount (AED)',
                     'Total Admin Users',
+                    'Total System Logs',
                     'Report Generated'
                 ],
                 'Value': [
                     total_visitors,
-                    visitors_with_qr,
                     round(total_issued, 2),
                     round(total_topup, 2),
                     round(total_payments, 2),
-                    round(total_spent, 2),
-                    round(avg_balance, 2),
-                    total_revenue_transactions,
-                    total_payment_transactions,
-                    most_active_visitor,
-                    most_active_count,
-                    top_spender_name,
-                    round(top_spender_amount, 2),
                     total_admins,
-                    datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    total_logs,
+                    datetime.now(uae_tz).strftime('%Y-%m-%d %H:%M:%S')
                 ]
             }
             df_summary = pd.DataFrame(summary_data)
             df_summary.to_excel(writer, sheet_name='Summary', index=False)
         
-        return send_file(excel_filename, as_attachment=True, download_name='comprehensive_user_report.xlsx')
-
-    except Exception as err:
-        logging.error(f"Error generating report: {err}")
-        return jsonify({"error": f"Error generating report: {str(err)}"}), 500
+        output.seek(0)
+        
+        log_activity('admin', 'system', 'generate_report', 'Generated comprehensive user report')
+        
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name='comprehensive_user_report.xlsx'
+        )
+        
+    except Exception as e:
+        logging.error(f"Error generating comprehensive report: {e}")
+        return jsonify({"error": f"Error generating report: {str(e)}"}), 500
     finally:
         cursor.close()
         conn.close()
@@ -1487,11 +1495,6 @@ def issue_coupon_page():
 @require_admin_page_auth
 def recharge_coupon_page():
     return render_template('recharge_coupon.html')
-
-@app.route('/admin/view-visitor-qrcodes')
-@require_admin_page_auth
-def view_visitor_qrcodes_page():
-    return render_template('view_visitor_qrcodes.html')
 
 @app.route('/admin_login')
 def admin_login_page():
@@ -1534,29 +1537,24 @@ def system_logs():
 def create_corporate_account():
     data = request.get_json()
     corporate_name = data.get('corporate_name', '').strip()
-    counter = data.get('counter', '').strip()
     staff_passkey = data.get('staff_passkey', '').strip()
     corporate_account = data.get('corporate_account', '').strip()
     
-    if not corporate_name or not counter or not staff_passkey:
-        return jsonify({"error": "Corporate name, counter, and passkey are required"}), 400
-    
-    # Validate passkey length (minimum 4 characters)
-    if len(staff_passkey) < 4:
-        return jsonify({"error": "Passkey must be at least 4 characters long"}), 400
+    if not corporate_name or not staff_passkey:
+        return jsonify({"error": "Corporate name and passkey are required"}), 400
     
     conn = get_db_connection()
     cursor = conn.cursor()
     
     try:
         # Check if corporate already exists
-        cursor.execute("SELECT id FROM access_keys WHERE user = ?", (corporate_name,))
+        cursor.execute("SELECT id FROM authenticator WHERE user = ?", (corporate_name,))
         if cursor.fetchone():
             return jsonify({"error": "Corporate account already exists"}), 400
         
-        # Store passkey as plain text
-        cursor.execute("INSERT INTO access_keys (user, counter, pass_key, passkey_display) VALUES (?, ?, ?, ?)", 
-                      (corporate_name, counter, staff_passkey, staff_passkey))
+        # Create corporate account
+        cursor.execute("INSERT INTO authenticator (user, counter, pass_key) VALUES (?, ?, ?)", 
+                      (corporate_name, corporate_name, staff_passkey))
         
         
         conn.commit()
@@ -1586,17 +1584,17 @@ def get_corporate_accounts():
     
     try:
         cursor.execute("""
-            SELECT user, counter, pass_key
-            FROM access_keys
-            ORDER BY user
+            SELECT user, pass_key, counter
+            FROM authenticator
+            ORDER BY id
         """)
         
         stalls = []
         for row in cursor.fetchall():
             stalls.append({
                 "corporate_name": row[0],
-                "counter": row[1],
-                "staff_passkey": row[2] or 'N/A'  # Return plain text passkey
+                "staff_passkey": row[1],
+                "counter": row[2]
             })
         
         return jsonify({"corporate_accounts": stalls})
@@ -1619,25 +1617,18 @@ def update_corporate_account():
 
     if not corporate_name:
         return jsonify({"error": "corporate_name is required"}), 400
-    
-    # Validate passkey length if provided (minimum 4 characters)
-    if new_passkey and len(new_passkey) < 4:
-        return jsonify({"error": "Passkey must be at least 4 characters long"}), 400
 
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT id FROM access_keys WHERE user = ?", (corporate_name,))
+        cursor.execute("SELECT id FROM authenticator WHERE user = ?", (corporate_name,))
         if not cursor.fetchone():
             return jsonify({"error": "Corporate not found"}), 404
 
         updates = []
         params = []
         if new_passkey:
-            # Store passkey as plain text
             updates.append("pass_key = ?")
-            updates.append("passkey_display = ?")
-            params.append(new_passkey)
             params.append(new_passkey)
         if new_counter:
             updates.append("counter = ?")
@@ -1646,7 +1637,7 @@ def update_corporate_account():
             return jsonify({"error": "No fields to update"}), 400
 
         params.append(corporate_name)
-        sql = f"UPDATE access_keys SET {', '.join(updates)} WHERE user = ?"
+        sql = f"UPDATE authenticator SET {', '.join(updates)} WHERE user = ?"
         cursor.execute(sql, tuple(params))
         conn.commit()
         
@@ -1670,7 +1661,7 @@ def delete_corporate_account():
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("DELETE FROM access_keys WHERE user = ?", (corporate_name,))
+        cursor.execute("DELETE FROM authenticator WHERE user = ?", (corporate_name,))
         if cursor.rowcount == 0:
             return jsonify({"error": "Corporate not found"}), 404
         conn.commit()
@@ -1682,6 +1673,219 @@ def delete_corporate_account():
     finally:
         cursor.close()
         conn.close()
+
+# Bulk delete corporate accounts
+@app.route('/api/bulk_delete_corporate_accounts', methods=['POST'])
+@require_admin_auth
+def bulk_delete_corporate_accounts():
+    data = request.get_json() or {}
+    corporate_names = data.get('corporate_names', [])
+    
+    if not corporate_names or not isinstance(corporate_names, list):
+        return jsonify({"error": "corporate_names array is required"}), 400
+    
+    if len(corporate_names) == 0:
+        return jsonify({"error": "No corporate names provided"}), 400
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    deleted_count = 0
+    not_found = []
+    deleted_names = []
+    
+    try:
+        for corporate_name in corporate_names:
+            corporate_name = str(corporate_name).strip()
+            if not corporate_name:
+                continue
+                
+            cursor.execute("DELETE FROM authenticator WHERE user = ?", (corporate_name,))
+            if cursor.rowcount > 0:
+                deleted_count += 1
+                deleted_names.append(corporate_name)
+            else:
+                not_found.append(corporate_name)
+        
+        conn.commit()
+        
+        # Log activity after commit to avoid database lock
+        if deleted_names:
+            if len(deleted_names) == 1:
+                log_activity('admin', 'system', 'delete_corporate', f"Deleted corporate {deleted_names[0]}")
+            else:
+                log_activity('admin', 'system', 'bulk_delete_corporate', f"Bulk deleted {len(deleted_names)} corporates: {', '.join(deleted_names[:10])}{'...' if len(deleted_names) > 10 else ''}")
+        
+        result = {
+            "success": True,
+            "deleted": deleted_count,
+            "not_found": not_found,
+            "message": f"Successfully deleted {deleted_count} corporate account(s)"
+        }
+        
+        if not_found:
+            result["message"] += f", {len(not_found)} not found"
+        
+        return jsonify(result)
+        
+    except sqlite3.Error as err:
+        conn.rollback()
+        logging.error(f"Database error: {err}")
+        return jsonify({"error": f"Database error: {str(err)}"}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+# Admin API to upload Excel file and bulk create corporate accounts
+@app.route('/api/upload_corporate_accounts', methods=['POST'])
+@require_admin_auth
+def upload_corporate_accounts():
+    """Upload Excel file and bulk create corporate accounts"""
+    try:
+        # Check if file is present
+        if 'file' not in request.files:
+            return jsonify({"error": "No file provided"}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"error": "No file selected"}), 400
+        
+        # Check file extension
+        if not file.filename.lower().endswith(('.xlsx', '.xls')):
+            return jsonify({"error": "Invalid file type. Please upload an Excel file (.xlsx or .xls)"}), 400
+        
+        # Read Excel file
+        try:
+            df = pd.read_excel(file)
+        except Exception as e:
+            logging.error(f"Error reading Excel file: {e}")
+            return jsonify({"error": f"Error reading Excel file: {str(e)}"}), 400
+        
+        # Normalize column names (case-insensitive, handle spaces/underscores)
+        df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_').str.replace('-', '_')
+        
+        # Map common column name variations
+        column_mapping = {
+            'corporate_name': ['corporate_name', 'corporate', 'name', 'company', 'company_name', 'corp_name'],
+            'counter': ['counter', 'counter_name', 'stall', 'stall_name', 'location'],
+            'staff_passkey': ['staff_passkey', 'passkey', 'pass_key', 'password', 'pin', 'key']
+        }
+        
+        # Find actual column names
+        actual_columns = {}
+        for target_col, variations in column_mapping.items():
+            for col in df.columns:
+                if col in variations:
+                    actual_columns[target_col] = col
+                    break
+        
+        # Check if required columns exist
+        missing_cols = [col for col in column_mapping.keys() if col not in actual_columns]
+        if missing_cols:
+            return jsonify({
+                "error": f"Missing required columns: {', '.join(missing_cols)}. Found columns: {', '.join(df.columns.tolist())}"
+            }), 400
+        
+        # Rename columns for consistency
+        df = df.rename(columns={actual_columns['corporate_name']: 'corporate_name',
+                               actual_columns['counter']: 'counter',
+                               actual_columns['staff_passkey']: 'staff_passkey'})
+        
+        # Clean and validate data
+        df = df[['corporate_name', 'counter', 'staff_passkey']].copy()
+        df = df.dropna(subset=['corporate_name', 'counter', 'staff_passkey'])
+        df['corporate_name'] = df['corporate_name'].astype(str).str.strip()
+        df['counter'] = df['counter'].astype(str).str.strip()
+        df['staff_passkey'] = df['staff_passkey'].astype(str).str.strip()
+        
+        # Remove empty rows
+        df = df[(df['corporate_name'] != '') & (df['counter'] != '') & (df['staff_passkey'] != '')]
+        
+        if len(df) == 0:
+            return jsonify({"error": "No valid data found in Excel file"}), 400
+        
+        # Validate passkey length
+        invalid_passkeys = df[df['staff_passkey'].str.len() < 4]
+        if len(invalid_passkeys) > 0:
+            return jsonify({
+                "error": f"Invalid passkeys found (must be at least 4 characters): {', '.join(invalid_passkeys['corporate_name'].tolist())}"
+            }), 400
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        try:
+            # Get existing corporate names to check for duplicates
+            cursor.execute("SELECT user FROM authenticator")
+            existing_corporates = {row[0] for row in cursor.fetchall()}
+            
+            # Separate new accounts and duplicates
+            new_accounts = []
+            duplicates = []
+            skipped = []
+            
+            for _, row in df.iterrows():
+                corporate_name = row['corporate_name']
+                counter = row['counter']
+                staff_passkey = row['staff_passkey']
+                
+                # Check for duplicates in the Excel file itself
+                if corporate_name in [acc['corporate_name'] for acc in new_accounts]:
+                    duplicates.append(corporate_name)
+                    continue
+                
+                # Check for duplicates in database
+                if corporate_name in existing_corporates:
+                    skipped.append(corporate_name)
+                    continue
+                
+                new_accounts.append({
+                    'corporate_name': corporate_name,
+                    'counter': counter,
+                    'staff_passkey': staff_passkey
+                })
+            
+            # Insert new accounts
+            inserted_count = 0
+            for account in new_accounts:
+                try:
+                    cursor.execute(
+                        "INSERT INTO authenticator (user, counter, pass_key) VALUES (?, ?, ?)",
+                        (account['corporate_name'], account['counter'], account['staff_passkey'])
+                    )
+                    inserted_count += 1
+                except sqlite3.IntegrityError:
+                    skipped.append(account['corporate_name'])
+            
+            conn.commit()
+            
+            # Log the bulk upload
+            log_activity('admin', 'system', 'bulk_upload_corporates', 
+                        f'Uploaded Excel file: {inserted_count} accounts created, {len(skipped)} skipped (duplicates), {len(duplicates)} duplicates in file')
+            
+            result = {
+                "success": True,
+                "message": f"Successfully processed {len(new_accounts)} accounts",
+                "inserted": inserted_count,
+                "skipped": len(skipped),
+                "duplicates_in_file": len(duplicates),
+                "skipped_names": skipped,
+                "duplicate_names": duplicates
+            }
+            
+            return jsonify(result)
+            
+        except sqlite3.Error as err:
+            conn.rollback()
+            logging.error(f"Database error: {err}")
+            return jsonify({"error": f"Database error: {str(err)}"}), 500
+        finally:
+            cursor.close()
+            conn.close()
+            
+    except Exception as e:
+        logging.error(f"Error processing Excel upload: {e}")
+        return jsonify({"error": f"Error processing file: {str(e)}"}), 500
 
 # Admin Dashboard route
 @app.route('/admin_dashboard')
@@ -1698,15 +1902,15 @@ def admin_stats():
     
     try:
         # Get total visitors
-        cursor.execute("SELECT COUNT(*) FROM visitors")
+        cursor.execute("SELECT COUNT(*) FROM coupons")
         total_visitors = cursor.fetchone()[0]
         
         # Get total revenue (from both issues and top-ups)
-        cursor.execute("SELECT SUM(amount) FROM topup_transactions")
+        cursor.execute("SELECT SUM(amount) FROM revenue")
         total_revenue = cursor.fetchone()[0] or 0
         
         # Get total transactions (all revenue entries)
-        cursor.execute("SELECT COUNT(*) FROM topup_transactions")
+        cursor.execute("SELECT COUNT(*) FROM revenue")
         total_transactions = cursor.fetchone()[0]
         
         return jsonify({
@@ -1732,7 +1936,7 @@ def admin_visitors():
     try:
         cursor.execute("""
             SELECT ticket_id, full_name, amount, balance, issue_date, pin
-            FROM visitors
+            FROM coupons
             ORDER BY issue_date DESC
         """)
         
@@ -1756,6 +1960,66 @@ def admin_visitors():
         cursor.close()
         conn.close()
 
+# Admin Delete Visitor API
+@app.route('/api/admin_delete_visitor', methods=['POST'])
+@require_admin_auth
+def admin_delete_visitor():
+    data = request.get_json() or {}
+    ticket_id = data.get('ticket_id')
+    if not ticket_id:
+        return jsonify({"error": "ticket_id is required"}), 400
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("DELETE FROM coupons WHERE ticket_id = ?", (ticket_id,))
+        if cursor.rowcount == 0:
+            return jsonify({"error": "Visitor not found"}), 404
+        conn.commit()
+        log_activity('admin', 'system', 'delete_visitor', f"Deleted visitor {ticket_id}")
+        return jsonify({"success": True})
+    except sqlite3.Error as err:
+        logging.error(f"Database error: {err}")
+        return jsonify({"error": "Database error"}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+
+# Admin Update Visitor API
+@app.route('/api/admin_update_visitor', methods=['POST'])
+@require_admin_auth
+def admin_update_visitor():
+    data = request.get_json() or {}
+    ticket_id = data.get('ticket_id')
+    new_full_name = (data.get('full_name') or '').strip()
+
+    if not ticket_id:
+        return jsonify({"error": "ticket_id is required"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT full_name FROM coupons WHERE ticket_id = ?", (ticket_id,))
+        existing = cursor.fetchone()
+        if not existing:
+            return jsonify({"error": "Visitor not found"}), 404
+
+        if new_full_name:
+            cursor.execute("SELECT 1 FROM coupons WHERE full_name = ? AND ticket_id != ?", (new_full_name, ticket_id))
+            if cursor.fetchone():
+                return jsonify({"error": "Full name already exists"}), 400
+            cursor.execute("UPDATE coupons SET full_name = ? WHERE ticket_id = ?", (new_full_name, ticket_id))
+            conn.commit()
+
+        log_activity('admin', 'system', 'update_visitor', f"Updated visitor {ticket_id}")
+        return jsonify({"success": True})
+    except sqlite3.Error as err:
+        logging.error(f"Database error: {err}")
+        return jsonify({"error": "Database error"}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
 # Admin Visitor QR Codes API
 @app.route('/api/admin_visitor_qrcodes')
 @require_admin_auth
@@ -1766,7 +2030,7 @@ def admin_visitor_qrcodes():
     try:
         cursor.execute("""
             SELECT ticket_id, full_name, amount, balance, qr_code, issue_date
-            FROM visitors
+            FROM coupons
             WHERE qr_code IS NOT NULL AND qr_code != ''
             ORDER BY issue_date DESC
         """)
@@ -1808,7 +2072,7 @@ def admin_visitor_transactions():
     try:
         # Get visitor name if ticket_id is provided
         if ticket_id:
-            cursor.execute("SELECT full_name FROM visitors WHERE ticket_id = ?", (ticket_id,))
+            cursor.execute("SELECT full_name FROM coupons WHERE ticket_id = ?", (ticket_id,))
             result = cursor.fetchone()
             if result:
                 full_name = result[0]
@@ -1820,7 +2084,7 @@ def admin_visitor_transactions():
         # Get revenue transactions (Issue and Top up)
         cursor.execute("""
             SELECT created_at, type, amount, pin
-            FROM topup_transactions
+            FROM revenue
             WHERE full_name = ?
             ORDER BY created_at DESC
         """, (full_name,))
@@ -1838,7 +2102,7 @@ def admin_visitor_transactions():
         # Get payment transactions (from counters table)
         cursor.execute("""
             SELECT time, amount, name, staff
-            FROM payments
+            FROM counters
             WHERE customer = ?
             ORDER BY time DESC
         """, (full_name,))
@@ -1847,9 +2111,9 @@ def admin_visitor_transactions():
             transactions.append({
                 "date": row[0],
                 "type": "Payment",
-                "amount": row[1],  # amount is the payment amount
+                "amount": row[1],
                 "admin": row[3] if row[3] else "Unknown",
-                "stall_booth": row[2],  # name is the stall/counter name
+                "stall_booth": row[2],
                 "details": f"Payment at {row[2]}"
             })
         
@@ -1857,71 +2121,11 @@ def admin_visitor_transactions():
         transactions.sort(key=lambda x: x['date'], reverse=True)
         
         return jsonify({
+            "transactions": transactions,
             "visitor_name": full_name,
-            "ticket_id": ticket_id,
-            "transactions": transactions
+            "ticket_id": ticket_id
         })
         
-    except sqlite3.Error as err:
-        logging.error(f"Database error: {err}")
-        return jsonify({"error": "Database error"}), 500
-    finally:
-        cursor.close()
-        conn.close()
-
-# Admin Delete Visitor API
-@app.route('/api/admin_delete_visitor', methods=['POST'])
-@require_admin_auth
-def admin_delete_visitor():
-    data = request.get_json() or {}
-    ticket_id = data.get('ticket_id')
-    if not ticket_id:
-        return jsonify({"error": "ticket_id is required"}), 400
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("DELETE FROM visitors WHERE ticket_id = ?", (ticket_id,))
-        if cursor.rowcount == 0:
-            return jsonify({"error": "Visitor not found"}), 404
-        conn.commit()
-        log_activity('admin', 'system', 'delete_visitor', f"Deleted visitor {ticket_id}")
-        return jsonify({"success": True})
-    except sqlite3.Error as err:
-        logging.error(f"Database error: {err}")
-        return jsonify({"error": "Database error"}), 500
-    finally:
-        cursor.close()
-        conn.close()
-
-
-# Admin Update Visitor API
-@app.route('/api/admin_update_visitor', methods=['POST'])
-@require_admin_auth
-def admin_update_visitor():
-    data = request.get_json() or {}
-    ticket_id = data.get('ticket_id')
-    new_full_name = (data.get('full_name') or '').strip()
-
-    if not ticket_id:
-        return jsonify({"error": "ticket_id is required"}), 400
-
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("SELECT full_name FROM visitors WHERE ticket_id = ?", (ticket_id,))
-        existing = cursor.fetchone()
-        if not existing:
-            return jsonify({"error": "Visitor not found"}), 404
-
-        if new_full_name:
-            cursor.execute("SELECT 1 FROM visitors WHERE full_name = ? AND ticket_id != ?", (new_full_name, ticket_id))
-            if cursor.fetchone():
-                return jsonify({"error": "Full name already exists"}), 400
-            cursor.execute("UPDATE visitors SET full_name = ? WHERE ticket_id = ?", (new_full_name, ticket_id))
-            conn.commit()
-
-        log_activity('admin', 'system', 'update_visitor', f"Updated visitor {ticket_id}")
-        return jsonify({"success": True})
     except sqlite3.Error as err:
         logging.error(f"Database error: {err}")
         return jsonify({"error": "Database error"}), 500
@@ -1941,7 +2145,7 @@ def list_admin_users():
         cursor.execute("""
             SELECT id, username, role, is_active, failed_login_attempts, locked_until, 
                    last_login, created_by, created_at
-            FROM admins
+            FROM admin_users
             ORDER BY created_at DESC
         """)
         
@@ -2014,7 +2218,7 @@ def create_admin():
         conn = get_db_connection()
         cursor = conn.cursor()
         try:
-            cursor.execute("SELECT password_hash FROM admins WHERE username = ? AND role = 'super_admin'", (current_admin,))
+            cursor.execute("SELECT password_hash FROM admin_users WHERE username = ? AND role = 'super_admin'", (current_admin,))
             current_user = cursor.fetchone()
             if not current_user or not verify_password(current_password, current_user['password_hash']):
                 log_activity('admin', current_admin, 'create_admin_failed', f'Failed to create super admin - invalid password confirmation for {username}', request.remote_addr)
@@ -2028,7 +2232,7 @@ def create_admin():
     
     try:
         # Check if username already exists
-        cursor.execute("SELECT id FROM admins WHERE username = ?", (username,))
+        cursor.execute("SELECT id FROM admin_users WHERE username = ?", (username,))
         if cursor.fetchone():
             return jsonify({"error": "Username already exists"}), 400
         
@@ -2037,7 +2241,7 @@ def create_admin():
         
         # Create admin account
         cursor.execute("""
-            INSERT INTO admins (username, password_hash, role, created_by)
+            INSERT INTO admin_users (username, password_hash, role, created_by)
             VALUES (?, ?, ?, ?)
         """, (username, password_hash, role, current_admin))
         
@@ -2084,7 +2288,7 @@ def update_password():
     
     try:
         # Get current password hash and role
-        cursor.execute("SELECT password_hash, role FROM admins WHERE username = ?", (username,))
+        cursor.execute("SELECT password_hash, role FROM admin_users WHERE username = ?", (username,))
         user = cursor.fetchone()
         
         if not user:
@@ -2104,7 +2308,7 @@ def update_password():
         new_password_hash = hash_password(new_password)
         
         # Update password
-        cursor.execute("UPDATE admins SET password_hash = ? WHERE username = ?", (new_password_hash, username))
+        cursor.execute("UPDATE admin_users SET password_hash = ? WHERE username = ?", (new_password_hash, username))
         conn.commit()
         
         # Enhanced logging for super admin password changes
@@ -2158,7 +2362,7 @@ def reset_password():
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT password_hash FROM admins WHERE username = ? AND role = 'super_admin'", (current_admin,))
+        cursor.execute("SELECT password_hash FROM admin_users WHERE username = ? AND role = 'super_admin'", (current_admin,))
         current_user = cursor.fetchone()
         if not current_user or not verify_password(current_password, current_user['password_hash']):
             log_activity('super_admin', current_admin, 'reset_password_failed', 
@@ -2172,7 +2376,7 @@ def reset_password():
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT role FROM admins WHERE username = ?", (username,))
+        cursor.execute("SELECT role FROM admin_users WHERE username = ?", (username,))
         target_user = cursor.fetchone()
         is_super_admin = target_user and target_user['role'] == 'super_admin'
     finally:
@@ -2189,7 +2393,7 @@ def reset_password():
     
     try:
         # Check if user exists
-        cursor.execute("SELECT id FROM admins WHERE username = ?", (username,))
+        cursor.execute("SELECT id FROM admin_users WHERE username = ?", (username,))
         if not cursor.fetchone():
             return jsonify({"error": "User not found"}), 404
         
@@ -2198,7 +2402,7 @@ def reset_password():
         
         # Update password and reset failed attempts
         cursor.execute("""
-            UPDATE admins 
+            UPDATE admin_users 
             SET password_hash = ?, failed_login_attempts = 0, locked_until = NULL
             WHERE username = ?
         """, (new_password_hash, username))
@@ -2210,6 +2414,40 @@ def reset_password():
                     f'Reset password for {username} from IP: {request.remote_addr}')
         
         return jsonify({"success": True, "message": f"Password reset successfully for {username}"})
+        
+    except sqlite3.Error as err:
+        logging.error(f"Database error: {err}")
+        return jsonify({"error": "Database error"}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+# Unlock admin account (reset failed attempts) - No auth required for emergency unlock
+@app.route('/api/admin/unlock_account', methods=['POST'])
+def unlock_account():
+    """Unlock an admin account by resetting failed login attempts (no auth required for emergency unlock)"""
+    data = request.get_json() or {}
+    username = (data.get('username') or '').strip()
+    
+    if not username:
+        return jsonify({"error": "Username is required"}), 400
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        # Check if user exists
+        cursor.execute("SELECT id FROM admin_users WHERE username = ?", (username,))
+        if not cursor.fetchone():
+            return jsonify({"error": "User not found"}), 404
+        
+        # Reset failed attempts and unlock account
+        cursor.execute("UPDATE admin_users SET failed_login_attempts = 0, locked_until = NULL WHERE username = ?", (username,))
+        conn.commit()
+        
+        log_activity('system', 'system', 'unlock_account', f'Account unlocked for {username}')
+        
+        return jsonify({"success": True, "message": f"Account '{username}' unlocked successfully"})
         
     except sqlite3.Error as err:
         logging.error(f"Database error: {err}")
@@ -2247,7 +2485,7 @@ def delete_admin():
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT password_hash FROM admins WHERE username = ? AND role = 'super_admin'", (current_admin,))
+        cursor.execute("SELECT password_hash FROM admin_users WHERE username = ? AND role = 'super_admin'", (current_admin,))
         current_user = cursor.fetchone()
         if not current_user or not verify_password(password_confirmation, current_user['password_hash']):
             log_activity('super_admin', current_admin, 'delete_admin_failed', 
@@ -2265,20 +2503,23 @@ def delete_admin():
     
     try:
         # Check if user exists
-        cursor.execute("SELECT id, role FROM admins WHERE username = ?", (username,))
+        cursor.execute("SELECT id, role FROM admin_users WHERE username = ?", (username,))
         user = cursor.fetchone()
         
         if not user:
             return jsonify({"error": "User not found"}), 404
         
-        # Super admin account protection: Prevent deletion of any super admin account
+        # Super admin account protection: Check if this is the last super admin
         if user['role'] == 'super_admin':
-            log_activity('super_admin', current_admin, 'delete_admin_blocked', 
-                       f'Blocked deletion of super admin account: {username} from IP: {request.remote_addr}')
-            return jsonify({"error": "Super administrator accounts cannot be deleted"}), 403
+            cursor.execute("SELECT COUNT(*) FROM admin_users WHERE role = 'super_admin' AND is_active = 1")
+            super_admin_count = cursor.fetchone()[0]
+            if super_admin_count <= 1:
+                log_activity('super_admin', current_admin, 'delete_admin_blocked', 
+                           f'Blocked deletion of last super admin: {username} from IP: {request.remote_addr}')
+                return jsonify({"error": "Cannot delete the last active super admin account"}), 403
         
         # Delete user
-        cursor.execute("DELETE FROM admins WHERE username = ?", (username,))
+        cursor.execute("DELETE FROM admin_users WHERE username = ?", (username,))
         conn.commit()
         
         # Enhanced logging for super admin actions
@@ -2323,7 +2564,7 @@ def toggle_active():
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT password_hash FROM admins WHERE username = ? AND role = 'super_admin'", (current_admin,))
+        cursor.execute("SELECT password_hash FROM admin_users WHERE username = ? AND role = 'super_admin'", (current_admin,))
         current_user = cursor.fetchone()
         if not current_user or not verify_password(password_confirmation, current_user['password_hash']):
             log_activity('super_admin', current_admin, 'toggle_active_failed', 
@@ -2338,21 +2579,24 @@ def toggle_active():
     
     try:
         # Get current status and role
-        cursor.execute("SELECT is_active, role FROM admins WHERE username = ?", (username,))
+        cursor.execute("SELECT is_active, role FROM admin_users WHERE username = ?", (username,))
         user = cursor.fetchone()
         
         if not user:
             return jsonify({"error": "User not found"}), 404
         
-        # Super admin account protection: Prevent disabling any super admin account
-        if user['role'] == 'super_admin':
-            log_activity('super_admin', current_admin, 'toggle_active_blocked', 
-                       f'Blocked disabling super admin account: {username} from IP: {request.remote_addr}')
-            return jsonify({"error": "Super administrator accounts cannot be disabled"}), 403
+        # Super admin account protection: Prevent disabling last super admin
+        if user['role'] == 'super_admin' and user['is_active'] == 1:
+            cursor.execute("SELECT COUNT(*) FROM admin_users WHERE role = 'super_admin' AND is_active = 1")
+            super_admin_count = cursor.fetchone()[0]
+            if super_admin_count <= 1:
+                log_activity('super_admin', current_admin, 'toggle_active_blocked', 
+                           f'Blocked disabling last super admin: {username} from IP: {request.remote_addr}')
+                return jsonify({"error": "Cannot disable the last active super admin account"}), 403
         
         # Toggle status
         new_status = 0 if user['is_active'] == 1 else 1
-        cursor.execute("UPDATE admins SET is_active = ? WHERE username = ?", (new_status, username))
+        cursor.execute("UPDATE admin_users SET is_active = ? WHERE username = ?", (new_status, username))
         conn.commit()
         
         status_text = "enabled" if new_status == 1 else "disabled"
@@ -2384,7 +2628,7 @@ def admin_transactions():
         # Get revenue transactions
         cursor.execute("""
             SELECT created_at, type, full_name, amount, pin
-            FROM topup_transactions
+            FROM revenue
             ORDER BY created_at DESC
             LIMIT 100
         """)
@@ -2403,7 +2647,7 @@ def admin_transactions():
         # Get payment transactions
         cursor.execute("""
             SELECT time, customer, amount, name, staff
-            FROM payments
+            FROM counters
             ORDER BY time DESC
             LIMIT 100
         """)

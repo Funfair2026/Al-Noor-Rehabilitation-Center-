@@ -40,26 +40,15 @@ def install_dependencies():
 
 def initialize_database():
     """Initialize the SQLite database"""
-    print("🗄️ Initializing database...")
-    try:
-        # Check if init_sqlite.py exists
-        if not os.path.exists("init_sqlite.py"):
-            print("❌ Error: init_sqlite.py not found")
-            sys.exit(1)
-        
-        # Run the initialization script
-        subprocess.check_call([sys.executable, "init_sqlite.py"])
-        print("✅ Database initialized successfully")
-        
-        # Check if database file was created
-        if os.path.exists("funfair.db"):
-            print("✅ Database file 'funfair.db' created")
-        else:
-            print("⚠️ Warning: Database file not found after initialization")
-            
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Error initializing database: {e}")
-        sys.exit(1)
+    print("🗄️ Checking database...")
+    
+    # Database will be auto-created by app_sqlite.py when it starts
+    # Tables are created automatically via create_table_if_not_exists()
+    if os.path.exists("funfair.db"):
+        print("✅ Database already exists")
+    else:
+        print("✅ Database will be created automatically when server starts")
+        print("   Tables will be initialized automatically")
     print()
 
 def check_templates():
@@ -93,40 +82,8 @@ def check_templates():
 
 def create_startup_script():
     """Create a startup script for easy launching"""
-    startup_content = """#!/usr/bin/env python3
-\"\"\"
-Funfair QR Code Payment System - Startup Script
-\"\"\"
-
-import subprocess
-import sys
-import os
-
-def main():
-    print("🎪 Starting Funfair QR Code Payment System...")
-    print("📱 Open your browser and go to: http://localhost:5001")
-    print("🛑 Press Ctrl+C to stop the server")
-    print()
-    
-    try:
-        subprocess.run([sys.executable, "app_sqlite.py"])
-    except KeyboardInterrupt:
-        print("\\n🛑 Server stopped by user")
-    except Exception as e:
-        print(f"❌ Error starting server: {e}")
-
-if __name__ == "__main__":
-    main()
-"""
-    
-    with open("start_server.py", "w") as f:
-        f.write(startup_content)
-    
-    # Make it executable on Unix systems
-    if os.name != 'nt':
-        os.chmod("start_server.py", 0o755)
-    
-    print("✅ Created startup script: start_server.py")
+    # No longer creating start_server.py as app_sqlite.py can be run directly
+    print("✅ Use 'python app_sqlite.py' or existing startup scripts to run the server")
 
 def main():
     """Main setup function"""
@@ -157,7 +114,7 @@ def main():
     print("🚀 To start the server, run:")
     print("   python3 app_sqlite.py")
     print("   OR")
-    print("   python3 start_server.py")
+    print("   python3 start_funfair.py")
     print()
     print("📱 Then open your browser and go to:")
     print("   http://localhost:5001")
