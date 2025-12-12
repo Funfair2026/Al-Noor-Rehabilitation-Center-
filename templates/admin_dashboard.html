@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Funfair 2025</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'glow': 'glow 2s ease-in-out infinite alternate',
+                        'slide-up': 'slideUp 0.6s ease-out',
+                        'fade-in': 'fadeIn 0.8s ease-out',
+                        'pulse-slow': 'pulse 3s infinite',
+                        'bounce-slow': 'bounce 3s infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        },
+                        glow: {
+                            '0%': { boxShadow: '0 0 20px rgba(59, 130, 246, 0.5)' },
+                            '100%': { boxShadow: '0 0 40px rgba(59, 130, 246, 0.8)' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(30px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <!-- Animated Background -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute -top-40 -right-40 w-80 h-80 bg-blue-400 opacity-10 rounded-full animate-float"></div>
+        <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-400 opacity-10 rounded-full animate-float" style="animation-delay: 2s;"></div>
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-indigo-400 opacity-10 rounded-full animate-pulse-slow"></div>
+    </div>
+
+    <div class="relative z-10 min-h-screen p-4">
+        <div class="max-w-7xl mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-12 animate-fade-in">
+                <div class="inline-block p-4 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl mb-6 animate-glow">
+                    <span class="text-5xl">🎛️</span>
+                </div>
+                <h1 class="text-5xl md:text-6xl font-bold text-white mb-4 drop-shadow-2xl">
+                    Complete Admin Dashboard
+                </h1>
+                <p class="text-xl text-white/80 max-w-2xl mx-auto">
+                    Full CRUD operations for all system entities
+                </p>
+            </div>
+
+            <!-- Back Button -->
+            <div class="mb-8 animate-slide-up">
+                <a 
+                    href="/admin" 
+                    class="inline-flex items-center bg-white/10 hover:bg-white/20 backdrop-blur-lg border border-white/20 text-white px-6 py-3 rounded-xl transition-all duration-300 transform hover:scale-105"
+                >
+                    <span class="mr-2">←</span>
+                    Back to Admin Portal
+                </a>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="group relative animate-slide-up">
+                    <div class="absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-glow"></div>
+                    <div class="relative bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-2 hover:scale-105">
+                        <div class="text-center">
+                            <div class="text-4xl mb-3 animate-bounce-slow">👥</div>
+                            <h3 class="text-lg font-bold text-white mb-2">Total Visitors</h3>
+                            <div id="totalVisitors" class="text-3xl font-bold text-blue-400">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="group relative animate-slide-up" style="animation-delay: 0.1s;">
+                    <div class="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-glow"></div>
+                    <div class="relative bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-2 hover:scale-105">
+                        <div class="text-center">
+                            <div class="text-4xl mb-3 animate-bounce-slow" style="animation-delay: 0.5s;">💰</div>
+                            <h3 class="text-lg font-bold text-white mb-2">Total Revenue</h3>
+                            <div id="totalRevenue" class="text-3xl font-bold text-green-400">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="group relative animate-slide-up" style="animation-delay: 0.3s;">
+                    <div class="absolute inset-0 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-glow"></div>
+                    <div class="relative bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-2 hover:scale-105">
+                        <div class="text-center">
+                            <div class="text-4xl mb-3 animate-bounce-slow" style="animation-delay: 1.5s;">📊</div>
+                            <h3 class="text-lg font-bold text-white mb-2">Transactions</h3>
+                            <div id="totalTransactions" class="text-3xl font-bold text-yellow-400">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-2 mb-8 animate-fade-in" style="animation-delay: 0.4s;">
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="showTab('visitors')" id="tab-visitors" class="tab-btn active bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300">
+                        Visitors
+                    </button>
+                    <button onclick="showTab('admin-management')" id="tab-admin-management" class="tab-btn bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300">
+                        Admin Management
+                    </button>
+                    <button onclick="showTab('corporate-management')" id="tab-corporate-management" class="tab-btn bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300">
+                        Corporate Management
+                    </button>
+                    <button onclick="showTab('live-dashboard')" id="tab-live-dashboard" class="tab-btn bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300">
+                        Live Dashboard
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-8 animate-slide-up" style="animation-delay: 0.6s;">
+                
+                <!-- Visitors Tab -->
+                <div id="content-visitors" class="tab-content">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-2xl font-bold text-white">Manage Visitors</h3>
+                    </div>
+                    
+                    
+                    <!-- Visitors Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-white">
+                            <thead>
+                                <tr class="border-b border-white/20">
+                                    <th class="text-left py-3 px-4">Name</th>
+                                    <th class="text-left py-3 px-4">Amount</th>
+                                    <th class="text-left py-3 px-4">Balance</th>
+                                    <th class="text-left py-3 px-4">Date</th>
+                                    <th class="text-left py-3 px-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="visitorsTable">
+                                <!-- Dynamic content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Admin Management Tab -->
+                <div id="content-admin-management" class="tab-content hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-2xl font-bold text-white">Admin Management</h3>
+                        <div class="space-x-3">
+                            <button onclick="showAddAdminForm()" class="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105">
+                                Add New Admin
+                            </button>
+                            <button onclick="loadAdminUsers()" class="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105">
+                                Refresh List
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Add Admin Form -->
+                    <div id="addAdminForm" class="hidden bg-white/10 rounded-2xl p-6 mb-6">
+                        <h4 class="text-xl font-bold text-white mb-4">Add New Admin</h4>
+                        <form id="adminForm" class="grid md:grid-cols-2 gap-4">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-semibold text-white/90 mb-2">Username</label>
+                                    <input type="text" id="adminUsername" required class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., admin1">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-white/90 mb-2">Password</label>
+                                    <input type="password" id="adminPassword" required class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter password">
+                                    <p class="text-xs text-white/60 mt-1">Administrator: Min 8 chars | Super Administrator: Min 12 chars, 2 numbers, 2 special chars</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-white/90 mb-2">Confirm Password</label>
+                                    <input type="password" id="adminPasswordConfirm" required class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Confirm password">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-white/90 mb-2">Role</label>
+                                <div class="space-y-3">
+                                    <label class="flex items-center p-3 bg-white/10 border border-white/20 rounded-xl cursor-pointer hover:bg-white/15 transition-colors">
+                                        <input type="radio" name="adminRole" id="adminRoleAdmin" value="admin" checked class="mr-3 w-4 h-4 text-blue-600 focus:ring-blue-500">
+                                        <div>
+                                            <div class="text-white font-medium">Administrator</div>
+                                            <div class="text-white/60 text-xs">Standard Admin - Full system access</div>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-center p-3 bg-white/10 border border-white/20 rounded-xl cursor-pointer hover:bg-white/15 transition-colors">
+                                        <input type="radio" name="adminRole" id="adminRoleSuper" value="super_admin" class="mr-3 w-4 h-4 text-purple-600 focus:ring-purple-500">
+                                        <div>
+                                            <div class="text-white font-medium">Super Administrator</div>
+                                            <div class="text-white/60 text-xs">Full Access - Can create and manage admins</div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                            <div id="currentPasswordField" class="md:col-span-2 hidden">
+                                <label class="block text-sm font-semibold text-white/90 mb-2">Your Current Password (Required for creating super admin)</label>
+                                <input type="password" id="currentPassword" class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your current password">
+                            </div>
+                            <div class="md:col-span-2">
+                                <button type="submit" class="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105">
+                                    👤 Create Admin
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Admin Management Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-white">
+                            <thead>
+                                <tr class="border-b border-white/20">
+                                    <th class="text-left py-3 px-4">Username</th>
+                                    <th class="text-left py-3 px-4">Role</th>
+                                    <th class="text-left py-3 px-4">Status</th>
+                                    <th class="text-left py-3 px-4">Last Login</th>
+                                    <th class="text-left py-3 px-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminUsersTable">
+                                <!-- Dynamic content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Corporate Management Tab -->
+                <div id="content-corporate-management" class="tab-content hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-2xl font-bold text-white">Corporate Management</h3>
+                        <div class="space-x-3">
+                            <button onclick="showAddCorporateForm()" class="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105">
+                                Add New Corporate
+                            </button>
+                            <button id="bulkDeleteBtn" onclick="bulkDeleteCorporates()" class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hidden">
+                                Delete Selected (<span id="selectedCount">0</span>)
+                            </button>
+                            <button onclick="loadCorporateAccounts()" class="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105">
+                                Refresh List
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Upload Excel File -->
+                    <div class="bg-white/10 rounded-2xl p-6 mb-6">
+                        <h4 class="text-xl font-bold text-white mb-4">📤 Upload Excel File (Bulk Import)</h4>
+                        <p class="text-white/60 mb-4 text-sm">Upload an Excel file (.xlsx or .xls) with columns: <strong>Corporate Name</strong>, <strong>Counter</strong>, <strong>Staff Passkey</strong></p>
+                        
+                        <div class="border-2 border-dashed border-white/30 rounded-xl p-6 mb-4 bg-white/5 hover:bg-white/10 transition-colors" id="excelDropZone">
+                            <input type="file" id="excelFileInput" accept=".xlsx,.xls" class="hidden">
+                            <div class="text-center">
+                                <div class="text-4xl mb-2">📁</div>
+                                <p class="text-white/80 mb-2">Drag and drop Excel file here</p>
+                                <p class="text-white/60 text-sm mb-4">or</p>
+                                <button type="button" onclick="document.getElementById('excelFileInput').click()" class="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold py-2 px-6 rounded-xl transition-all duration-300 transform hover:scale-105">
+                                    Browse Files
+                                </button>
+                            </div>
+                            <div id="excelFileName" class="mt-4 text-center text-white/70 text-sm hidden"></div>
+                        </div>
+                        
+                        <button type="button" id="excelUploadBtn" class="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            Upload and Process Excel File
+                        </button>
+                        
+                        <div id="excelUploadMessage" class="mt-4"></div>
+                    </div>
+                    
+                    <!-- Add Corporate Form -->
+                    <div id="addCorporateForm" class="hidden bg-white/10 rounded-2xl p-6 mb-6">
+                        <h4 class="text-xl font-bold text-white mb-4">Add New Corporate Account</h4>
+                        <form id="corporateForm" class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-white/90 mb-2">Corporate Name</label>
+                                <input type="text" id="corporateName" required class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-white/90 mb-2">Counter</label>
+                                <input type="text" id="counter" required class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-white/90 mb-2">Staff Passkey</label>
+                                <input type="text" id="staffPasskey" required class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            </div>
+                            <div class="md:col-span-2">
+                                <button type="submit" class="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105">
+                                    🏢 Create Corporate Account
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Corporate Accounts Table -->
+                    <div class="bg-white/10 rounded-2xl p-6">
+                        <h4 class="text-xl font-bold text-white mb-4">Existing Corporate Accounts</h4>
+                        <div id="corporateAccountsList" class="text-white/80">
+                            Loading corporate accounts...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Dashboard Tab -->
+                <div id="content-live-dashboard" class="tab-content hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-2xl font-bold text-white">Live Dashboard</h3>
+                        <button onclick="refreshLiveDashboard()" class="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105">
+                            Refresh Data
+                        </button>
+                    </div>
+                    
+                    <!-- Live Dashboard Content -->
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                        <div class="bg-white/20 rounded-xl p-6 text-center">
+                            <h4 class="text-white/80">Total Revenue</h4>
+                            <div id="liveTotalRevenue" class="text-3xl font-bold text-blue-400 mt-2">AED 0</div>
+                            <p class="text-white/60 text-sm mt-1">All transactions combined</p>
+                        </div>
+                        <div class="bg-white/20 rounded-xl p-6 text-center">
+                            <h4 class="text-white/80">QR Codes Issued</h4>
+                            <div id="liveQrCodesIssued" class="text-3xl font-bold text-cyan-400 mt-2">0</div>
+                            <p class="text-white/60 text-sm mt-1">New coupons created</p>
+                        </div>
+                        <div class="bg-white/20 rounded-xl p-6 text-center">
+                            <h4 class="text-white/80">Top-ups Today</h4>
+                            <div id="liveTopUpsToday" class="text-3xl font-bold text-green-400 mt-2">0</div>
+                            <p class="text-white/60 text-sm mt-1">Recharge transactions</p>
+                        </div>
+                        <div class="bg-white/20 rounded-xl p-6 text-center">
+                            <h4 class="text-white/80">System Status</h4>
+                            <div class="text-2xl font-bold text-emerald-400 mt-2">Online</div>
+                            <p class="text-white/60 text-sm mt-1">All systems operational</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white/20 rounded-xl p-6">
+                        <h4 class="text-white font-semibold mb-3">Recent Activity</h4>
+                        <div id="liveRecentActivity" class="text-white/80 min-h-[100px]">Loading recent activity...</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating particles -->
+    <div class="fixed inset-0 pointer-events-none overflow-hidden">
+        <div class="absolute top-1/4 left-1/4 w-2 h-2 bg-blue-400/30 rounded-full animate-ping" style="animation-delay: 0s;"></div>
+        <div class="absolute top-3/4 left-3/4 w-3 h-3 bg-purple-400/40 rounded-full animate-ping" style="animation-delay: 2s;"></div>
+        <div class="absolute top-1/2 left-1/3 w-1 h-1 bg-indigo-400/50 rounded-full animate-ping" style="animation-delay: 4s;"></div>
+        <div class="absolute top-1/3 right-1/4 w-2 h-2 bg-pink-400/40 rounded-full animate-ping" style="animation-delay: 6s;"></div>
+    </div>
+
+    <script>
+        // Global token validation function
+        function validateToken() {
+            const token = localStorage.getItem('admin_token');
+            if (!token) {
+                window.location.href = '/admin_login';
+                return false;
+            }
+            
+            // Check if token is expired by trying to decode it
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                const now = Math.floor(Date.now() / 1000);
+                if (payload.exp < now) {
+                    localStorage.removeItem('admin_token');
+                    window.location.href = '/admin_login';
+                    return false;
+                }
+            } catch (e) {
+                localStorage.removeItem('admin_token');
+                window.location.href = '/admin_login';
+                return false;
+            }
+            
+            return true;
+        }
+
+        // Get user role from token
+        function getUserRole() {
+            const token = localStorage.getItem('admin_token');
+            if (!token) return null;
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                return payload.role;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // Check token on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!validateToken()) {
+                return;
+            }
+            
+            // Hide Admin Management tab if not super admin
+            const userRole = getUserRole();
+            const adminManagementTab = document.getElementById('tab-admin-management');
+            if (userRole !== 'super_admin' && adminManagementTab) {
+                adminManagementTab.style.display = 'none';
+            }
+            
+            loadStats();
+            loadVisitors();
+        });
+
+        // Tab functionality
+        function showTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-gradient-to-r', 'from-blue-500', 'to-cyan-500');
+                btn.classList.add('bg-white/10', 'hover:bg-white/20');
+            });
+            
+            // Show selected tab content
+            document.getElementById(`content-${tabName}`).classList.remove('hidden');
+            
+            // Add active class to selected tab
+            const activeBtn = document.getElementById(`tab-${tabName}`);
+            activeBtn.classList.add('active', 'bg-gradient-to-r', 'from-blue-500', 'to-cyan-500');
+            activeBtn.classList.remove('bg-white/10', 'hover:bg-white/20');
+            
+            // Load data for the selected tab
+            loadTabData(tabName);
+        }
+
+        // Load data for tabs
+        async function loadTabData(tabName) {
+            const token = localStorage.getItem('admin_token');
+            if (!token) {
+                window.location.href = '/admin_login';
+                return;
+            }
+
+            try {
+            switch(tabName) {
+                case 'visitors':
+                    await loadVisitors();
+                    break;
+                case 'admin-management':
+                    await loadAdminUsers();
+                    break;
+                case 'corporate-management':
+                    await loadCorporateAccounts();
+                    break;
+                case 'live-dashboard':
+                    await refreshLiveDashboard();
+                    break;
+            }
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        // Load statistics
+        // Load stats with token validation
+        async function loadStats() {
+            const token = localStorage.getItem('admin_token');
+            if (!token) {
+                window.location.href = '/admin_login';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin_stats', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.status === 401) {
+                    localStorage.removeItem('admin_token');
+                    window.location.href = '/admin_login';
+                    return;
+                }
+
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('totalVisitors').textContent = data.total_visitors;
+                    document.getElementById('totalRevenue').textContent = `AED ${data.total_revenue}`;
+                    document.getElementById('totalTransactions').textContent = data.total_transactions;
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Load visitors
+        async function loadVisitors() {
+            const token = localStorage.getItem('admin_token');
+            if (!token) return;
+
+            try {
+                const response = await fetch('/api/admin_visitors', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const tbody = document.getElementById('visitorsTable');
+                    tbody.innerHTML = data.visitors.map(visitor => {
+                        // Format issue date in UAE timezone
+                        let formattedDate = 'N/A';
+                        if (visitor.issue_date) {
+                            const date = new Date(visitor.issue_date);
+                            formattedDate = date.toLocaleString('en-US', {
+                                timeZone: 'Asia/Dubai',
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                second: '2-digit',
+                                hour12: true
+                            });
+                        }
+                        return `
+                        <tr class="border-b border-white/10 hover:bg-white/5">
+                            <td class="py-3 px-4">${visitor.full_name}</td>
+                            <td class="py-3 px-4">AED ${visitor.amount}</td>
+                            <td class="py-3 px-4">AED ${visitor.balance}</td>
+                            <td class="py-3 px-4">${formattedDate}</td>
+                            <td class="py-3 px-4 space-x-2">
+                                <button class="bg-white/10 hover:bg-white/20 px-3 py-1 rounded" onclick='editVisitor(${JSON.stringify(visitor)})'>Edit</button>
+                                <button class="bg-red-500/70 hover:bg-red-500 px-3 py-1 rounded" onclick='deleteVisitor(${visitor.ticket_id})'>Delete</button>
+                            </td>
+                        </tr>
+                    `;
+                    }).join('');
+                }
+            } catch (error) {
+                console.error('Error loading visitors:', error);
+            }
+        }
+
+
+        // Show add admin form
+        function showAddAdminForm() {
+            const form = document.getElementById('addAdminForm');
+            form.classList.toggle('hidden');
+            // Reset form when showing
+            if (!form.classList.contains('hidden')) {
+                document.getElementById('adminForm').reset();
+                document.getElementById('currentPasswordField').classList.add('hidden');
+            }
+        }
+
+        // Show/hide current password field based on role
+        const roleRadios = document.querySelectorAll('input[name="adminRole"]');
+        roleRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                const currentPasswordField = document.getElementById('currentPasswordField');
+                if (this.value === 'super_admin') {
+                    currentPasswordField.classList.remove('hidden');
+                } else {
+                    currentPasswordField.classList.add('hidden');
+                }
+            });
+        });
+        
+        // Initialize on page load
+        const selectedRole = document.querySelector('input[name="adminRole"]:checked');
+        if (selectedRole && selectedRole.value === 'super_admin') {
+            document.getElementById('currentPasswordField').classList.remove('hidden');
+        }
+
+        // Add admin form submission
+        document.getElementById('adminForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const token = localStorage.getItem('admin_token');
+            if (!token) {
+                window.location.href = '/admin_login';
+                return;
+            }
+
+            const username = document.getElementById('adminUsername').value.trim();
+            const password = document.getElementById('adminPassword').value;
+            const passwordConfirm = document.getElementById('adminPasswordConfirm').value;
+            const role = document.querySelector('input[name="adminRole"]:checked')?.value || 'admin';
+            const currentPassword = document.getElementById('currentPassword').value;
+
+            if (password !== passwordConfirm) {
+                alert('Password and confirmation do not match!');
+                return;
+            }
+
+            const formData = {
+                username: username,
+                password: password,
+                password_confirmation: passwordConfirm,
+                role: role
+            };
+
+            // Add current password if creating super admin
+            if (role === 'super_admin') {
+                if (!currentPassword) {
+                    alert('Current password is required to create super admin accounts');
+                    return;
+                }
+                formData.current_password = currentPassword;
+            }
+
+            try {
+                const response = await fetch('/api/admin/create_admin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(`Admin account '${username}' created successfully!`);
+                    document.getElementById('adminForm').reset();
+                    document.getElementById('addAdminForm').classList.add('hidden');
+                    document.getElementById('currentPasswordField').classList.add('hidden');
+                    loadAdminUsers();
+                } else {
+                    alert(`Error: ${result.error || 'Failed to create admin account'}`);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Network error. Please try again.');
+            }
+        });
+
+
+
+        // Live Dashboard functionality
+        async function refreshLiveDashboard() {
+            const token = localStorage.getItem('admin_token');
+            if (!token) {
+                window.location.href = '/admin_login';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/dashboard_data', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Update live dashboard with real data
+                    document.getElementById('liveTotalRevenue').textContent = 'AED ' + data.total_revenue.toFixed(2);
+                    document.getElementById('liveQrCodesIssued').textContent = data.qr_codes_today;
+                    document.getElementById('liveTopUpsToday').textContent = data.topups_today;
+                    
+                    
+                    // Update recent activity
+                    const recentActivity = document.getElementById('liveRecentActivity');
+                    if (data.recent_activity && data.recent_activity.length > 0) {
+                        recentActivity.innerHTML = data.recent_activity.map(activity => {
+                            const timestamp = new Date(activity.timestamp).toLocaleString('en-US', {
+                                timeZone: 'Asia/Dubai',
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                second: '2-digit',
+                                hour12: true
+                            });
+                            let icon = '';
+                            let color = '';
+                            let description = '';
+                            
+                            switch(activity.action) {
+                                case 'issue_coupon':
+                                    icon = '🎫';
+                                    color = 'text-blue-400';
+                                    // Extract alnoor name and amount from details
+                                    const issueMatch = activity.details.match(/Issued coupon for (.+), amount: (.+)/);
+                                    if (issueMatch) {
+                                        description = `QR Code issued for ${issueMatch[1]} (AED ${issueMatch[2]})`;
+                                    } else {
+                                        description = `QR Code issued: ${activity.details}`;
+                                    }
+                                    break;
+                                case 'topup_coupon':
+                                    icon = '💰';
+                                    color = 'text-green-400';
+                                    // Extract alnoor name and amount from details
+                                    const topupMatch = activity.details.match(/Recharged (.+) with AED (.+) at alnoor (.+)/);
+                                    if (topupMatch) {
+                                        description = `Recharged ${topupMatch[1]} with AED ${topupMatch[2]} at ${topupMatch[3]}`;
+                                    } else {
+                                        description = `Recharge: ${activity.details}`;
+                                    }
+                                    break;
+                                case 'process_payment':
+                                    icon = '💳';
+                                    color = 'text-purple-400';
+                                    // Extract corporate name and amount from details
+                                    const paymentMatch = activity.details.match(/Payment of AED (.+) processed at (.+)/);
+                                    if (paymentMatch) {
+                                        description = `Payment of AED ${paymentMatch[1]} processed at ${paymentMatch[2]}`;
+                                    } else {
+                                        description = `Payment: ${activity.details}`;
+                                    }
+                                    break;
+                                case 'admin_create_visitor':
+                                    icon = '👤';
+                                    color = 'text-orange-400';
+                                    // Extract visitor name and amount from details
+                                    const visitorMatch = activity.details.match(/Admin created visitor: (.+), amount: (.+)/);
+                                    if (visitorMatch) {
+                                        description = `Admin created visitor ${visitorMatch[1]} with AED ${visitorMatch[2]}`;
+                                    } else {
+                                        description = `Admin created visitor: ${activity.details}`;
+                                    }
+                                    break;
+                                default:
+                                    icon = '📝';
+                                    color = 'text-gray-400';
+                                    description = activity.details;
+                            }
+                            
+                            return `
+                                <div class="flex items-start space-x-3 py-2 border-b border-white/10 last:border-b-0">
+                                    <div class="text-lg">${icon}</div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm ${color} font-medium">${description}</p>
+                                        <p class="text-xs text-white/60">${timestamp}</p>
+                                        <p class="text-xs text-white/50">${activity.user_type} • ${activity.user_id}</p>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                    } else {
+                        recentActivity.innerHTML = '<p class="text-white/60">No recent activity</p>';
+                    }
+                } else {
+                    console.error('Failed to fetch dashboard data');
+                }
+            } catch (error) {
+                console.error('Error refreshing dashboard:', error);
+            }
+        }
+
+        // Edit visitor
+        async function editVisitor(visitor) {
+            const full_name = prompt('New full name (leave blank to skip):', visitor.full_name) || '';
+            if (!full_name) return;
+            try {
+                const token = localStorage.getItem('admin_token');
+                const resp = await fetch('/api/admin_update_visitor', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ ticket_id: visitor.ticket_id, full_name: full_name.trim() === visitor.full_name ? '' : full_name.trim() })
+                });
+                if (resp.ok) {
+                    alert('Updated');
+                    loadVisitors();
+                } else {
+                    const err = await resp.json();
+                    alert('Error: ' + (err.error || 'Update failed'));
+                }
+            } catch (e) {
+                alert('Network error');
+            }
+        }
+
+        async function deleteVisitor(ticketId) {
+            if (!confirm('Delete this visitor? This cannot be undone.')) return;
+            try {
+                const token = localStorage.getItem('admin_token');
+                const resp = await fetch('/api/admin_delete_visitor', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ ticket_id: ticketId })
+                });
+                if (resp.ok) {
+                    loadVisitors();
+                    loadStats();
+                } else {
+                    const err = await resp.json();
+                    alert('Error: ' + (err.error || 'Delete failed'));
+                }
+            } catch (e) {
+                alert('Network error');
+            }
+        }
+
+        // Load admin users
+        async function loadAdminUsers() {
+            const token = localStorage.getItem('admin_token');
+            if (!token) {
+                console.error('No admin token found');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/list', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.status === 403) {
+                    const tbody = document.getElementById('adminUsersTable');
+                    tbody.innerHTML = '<tr><td colspan="5" class="py-3 px-4 text-center text-red-400">Super admin access required</td></tr>';
+                    return;
+                }
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const tbody = document.getElementById('adminUsersTable');
+                    
+                    if (data.admins && data.admins.length > 0) {
+                        tbody.innerHTML = data.admins.map(admin => {
+                            const statusBadge = admin.is_active 
+                                ? '<span class="px-2 py-1 bg-green-500/70 rounded text-xs">Active</span>'
+                                : '<span class="px-2 py-1 bg-red-500/70 rounded text-xs">Inactive</span>';
+                            
+                            const roleBadge = admin.role === 'super_admin'
+                                ? '<span class="px-2 py-1 bg-purple-500/70 rounded text-xs font-semibold">Super Administrator</span>'
+                                : '<span class="px-2 py-1 bg-blue-500/70 rounded text-xs font-semibold">Administrator</span>';
+                            
+                            // Format last login in UAE timezone (Asia/Dubai)
+                            let lastLogin = 'Never';
+                            if (admin.last_login) {
+                                const date = new Date(admin.last_login);
+                                lastLogin = date.toLocaleString('en-US', {
+                                    timeZone: 'Asia/Dubai',
+                                    year: 'numeric',
+                                    month: '2-digit',
+                                    day: '2-digit',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    second: '2-digit',
+                                    hour12: true
+                                });
+                            }
+                            
+                            const lockedBadge = admin.locked_until 
+                                ? '<span class="px-2 py-1 bg-yellow-500/70 rounded text-xs">Locked</span>'
+                                : '';
+                            
+                            // Only show Disable and Delete buttons for regular admins, not super admins
+                            const isSuperAdmin = admin.role === 'super_admin';
+                            const actionButtons = isSuperAdmin
+                                ? `<button class="bg-yellow-500/70 hover:bg-yellow-500 px-3 py-1 rounded text-sm" onclick='resetAdminPassword("${admin.username}")'>Reset Password</button>`
+                                : `<button class="bg-yellow-500/70 hover:bg-yellow-500 px-3 py-1 rounded text-sm" onclick='resetAdminPassword("${admin.username}")'>Reset Password</button>
+                                   <button class="bg-blue-500/70 hover:bg-blue-500 px-3 py-1 rounded text-sm" onclick='toggleAdminStatus("${admin.username}", ${admin.is_active})'>${admin.is_active ? 'Disable' : 'Enable'}</button>
+                                   <button class="bg-red-500/70 hover:bg-red-500 px-3 py-1 rounded text-sm" onclick='deleteAdmin("${admin.username}")'>Delete</button>`;
+                            
+                            return `
+                                <tr class="border-b border-white/10 hover:bg-white/5">
+                                    <td class="py-3 px-4 font-semibold">${admin.username}</td>
+                                    <td class="py-3 px-4">${roleBadge}</td>
+                                    <td class="py-3 px-4">${statusBadge} ${lockedBadge}</td>
+                                    <td class="py-3 px-4 text-white/70 text-sm">${lastLogin}</td>
+                                    <td class="py-3 px-4 space-x-2">
+                                        ${actionButtons}
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('');
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="5" class="py-3 px-4 text-center text-white/60">No admin accounts found</td></tr>';
+                    }
+                } else {
+                    const errorData = await response.json();
+                    console.error('API error:', errorData);
+                    const tbody = document.getElementById('adminUsersTable');
+                    tbody.innerHTML = '<tr><td colspan="5" class="py-3 px-4 text-center text-red-400">Error loading admin accounts</td></tr>';
+                }
+            } catch (error) {
+                console.error('Error loading admin users:', error);
+                const tbody = document.getElementById('adminUsersTable');
+                tbody.innerHTML = '<tr><td colspan="5" class="py-3 px-4 text-center text-red-400">Network error loading admin accounts</td></tr>';
+            }
+        }
+
+        // Reset admin password
+        async function resetAdminPassword(username) {
+            // Ask for old password first
+            const currentPassword = prompt(`Enter your current password to reset password for ${username}:`);
+            if (!currentPassword) {
+                return; // User cancelled
+            }
+            
+            // Then ask for new password
+            const newPassword = prompt(`Enter new password for ${username}:`);
+            if (!newPassword) {
+                return; // User cancelled
+            }
+            
+            // Confirm new password
+            const passwordConfirm = prompt('Confirm new password:');
+            if (!passwordConfirm) {
+                return; // User cancelled
+            }
+            
+            if (newPassword !== passwordConfirm) {
+                alert('New password and confirmation do not match!');
+                return;
+            }
+            
+            try {
+                const token = localStorage.getItem('admin_token');
+                const response = await fetch('/api/admin/reset_password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        new_password: newPassword,
+                        password_confirmation: passwordConfirm,
+                        current_password: currentPassword
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(`Password reset successfully for ${username}!`);
+                    loadAdminUsers();
+                } else {
+                    alert(`Error: ${result.error || 'Failed to reset password'}`);
+                }
+            } catch (error) {
+                alert('Network error. Please try again.');
+            }
+        }
+
+        // Toggle admin status
+        async function toggleAdminStatus(username, currentStatus) {
+            const action = currentStatus ? 'disable' : 'enable';
+            if (!confirm(`Are you sure you want to ${action} "${username}"?`)) return;
+            
+            const passwordConfirm = prompt('Enter your password to confirm:');
+            if (!passwordConfirm) {
+                alert('Password confirmation is required');
+                return;
+            }
+            
+            try {
+                const token = localStorage.getItem('admin_token');
+                const response = await fetch('/api/admin/toggle_active', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password_confirmation: passwordConfirm
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(`Admin account ${action}d successfully!`);
+                    loadAdminUsers();
+                } else {
+                    alert(`Error: ${result.error || 'Failed to update admin status'}`);
+                }
+            } catch (error) {
+                alert('Network error. Please try again.');
+            }
+        }
+
+        // Delete admin
+        async function deleteAdmin(username) {
+            if (!confirm(`Are you sure you want to delete "${username}"? This action cannot be undone.`)) return;
+            
+            const passwordConfirm = prompt('Enter your password to confirm deletion:');
+            if (!passwordConfirm) {
+                alert('Password confirmation is required');
+                return;
+            }
+            
+            try {
+                const token = localStorage.getItem('admin_token');
+                const response = await fetch('/api/admin/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password_confirmation: passwordConfirm
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(`Admin account '${username}' deleted successfully!`);
+                    loadAdminUsers();
+                } else {
+                    alert(`Error: ${result.error || 'Failed to delete admin account'}`);
+                }
+            } catch (error) {
+                alert('Network error. Please try again.');
+            }
+        }
+
+        // Show add corporate form
+        function showAddCorporateForm() {
+            const form = document.getElementById('addCorporateForm');
+            form.classList.toggle('hidden');
+        }
+
+        // Add corporate form submission
+        document.getElementById('corporateForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const corporateName = document.getElementById('corporateName').value;
+            const counter = document.getElementById('counter').value;
+            const staffPasskey = document.getElementById('staffPasskey').value;
+            
+            if (!corporateName || !counter || !staffPasskey) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/create_corporate_account', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    },
+                    body: JSON.stringify({
+                        corporate_name: corporateName,
+                        counter: counter,
+                        staff_passkey: staffPasskey
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert(result.message);
+                    document.getElementById('corporateForm').reset();
+                    document.getElementById('addCorporateForm').classList.add('hidden');
+                    loadCorporateAccounts();
+                } else {
+                    alert(result.error || 'Failed to create corporate account');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Network error. Please try again.');
+            }
+        });
+
+        // Excel file upload functionality
+        let selectedExcelFile = null;
+        const excelFileInput = document.getElementById('excelFileInput');
+        const excelUploadBtn = document.getElementById('excelUploadBtn');
+        const excelDropZone = document.getElementById('excelDropZone');
+        const excelFileName = document.getElementById('excelFileName');
+        const excelUploadMessage = document.getElementById('excelUploadMessage');
+
+        // File input change
+        excelFileInput.addEventListener('change', function(e) {
+            handleExcelFileSelect(e.target.files[0]);
+        });
+
+        // Drag and drop
+        excelDropZone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            excelDropZone.classList.add('border-green-400', 'bg-white/15');
+        });
+
+        excelDropZone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            excelDropZone.classList.remove('border-green-400', 'bg-white/15');
+        });
+
+        excelDropZone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            excelDropZone.classList.remove('border-green-400', 'bg-white/15');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleExcelFileSelect(files[0]);
+            }
+        });
+
+        function handleExcelFileSelect(file) {
+            if (!file) return;
+            
+            // Validate file type
+            if (!file.name.toLowerCase().endsWith('.xlsx') && !file.name.toLowerCase().endsWith('.xls')) {
+                excelUploadMessage.innerHTML = '<div class="bg-red-500/20 border border-red-500/30 rounded-xl p-4 text-red-200">❌ Invalid file type. Please upload an Excel file (.xlsx or .xls)</div>';
+                selectedExcelFile = null;
+                excelUploadBtn.disabled = true;
+                excelFileName.classList.add('hidden');
+                return;
+            }
+            
+            selectedExcelFile = file;
+            excelFileName.textContent = `Selected: ${file.name}`;
+            excelFileName.classList.remove('hidden');
+            excelUploadBtn.disabled = false;
+            excelUploadMessage.innerHTML = '';
+        }
+
+        // Upload button click
+        excelUploadBtn.addEventListener('click', async function() {
+            if (!selectedExcelFile) return;
+            
+            excelUploadBtn.disabled = true;
+            excelUploadBtn.textContent = 'Uploading...';
+            excelUploadMessage.innerHTML = '<div class="bg-blue-500/20 border border-blue-500/30 rounded-xl p-4 text-blue-200">⏳ Processing Excel file...</div>';
+            
+            const formData = new FormData();
+            formData.append('file', selectedExcelFile);
+            
+            try {
+                const response = await fetch('/api/upload_corporate_accounts', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    },
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    let messageHTML = `<div class="bg-green-500/20 border border-green-500/30 rounded-xl p-4 text-green-200">`;
+                    messageHTML += `✅ <strong>Success!</strong><br>`;
+                    messageHTML += `• <strong>${result.inserted}</strong> accounts created<br>`;
+                    
+                    if (result.skipped > 0) {
+                        messageHTML += `• <strong>${result.skipped}</strong> skipped (already exist in database)`;
+                        if (result.skipped_names && result.skipped_names.length > 0) {
+                            const showAllSkipped = result.skipped_names.length > 10;
+                            const displayedSkipped = showAllSkipped ? result.skipped_names.slice(0, 10) : result.skipped_names;
+                            const remainingSkipped = result.skipped_names.length - 10;
+                            messageHTML += `<br>&nbsp;&nbsp;Skipped: <span id="skipped-display">${displayedSkipped.join(', ')}</span>`;
+                            if (showAllSkipped) {
+                                messageHTML += `, <span id="skipped-more" style="display:none;">${result.skipped_names.slice(10).join(', ')}</span>`;
+                                messageHTML += ` <button onclick="toggleSkipped()" class="text-blue-300 hover:text-blue-200 underline text-sm cursor-pointer" id="skipped-toggle">Show all (${remainingSkipped} more)</button>`;
+                            }
+                        }
+                    }
+                    
+                    if (result.duplicates_in_file > 0) {
+                        messageHTML += `<br>• <strong>${result.duplicates_in_file}</strong> duplicates found in file (not added)`;
+                        if (result.duplicate_names && result.duplicate_names.length > 0) {
+                            const showAllDuplicates = result.duplicate_names.length > 10;
+                            const displayedDuplicates = showAllDuplicates ? result.duplicate_names.slice(0, 10) : result.duplicate_names;
+                            const remainingDuplicates = result.duplicate_names.length - 10;
+                            messageHTML += `<br>&nbsp;&nbsp;Duplicates: <span id="duplicates-display">${displayedDuplicates.join(', ')}</span>`;
+                            if (showAllDuplicates) {
+                                messageHTML += `, <span id="duplicates-more" style="display:none;">${result.duplicate_names.slice(10).join(', ')}</span>`;
+                                messageHTML += ` <button onclick="toggleDuplicates()" class="text-blue-300 hover:text-blue-200 underline text-sm cursor-pointer" id="duplicates-toggle">Show all (${remainingDuplicates} more)</button>`;
+                            }
+                        }
+                    }
+                    
+                    messageHTML += `</div>`;
+                    excelUploadMessage.innerHTML = messageHTML;
+                    
+                    // Reset file input
+                    excelFileInput.value = '';
+                    selectedExcelFile = null;
+                    excelFileName.classList.add('hidden');
+                    
+                    // Reload accounts list
+                    loadCorporateAccounts();
+                } else {
+                    excelUploadMessage.innerHTML = `<div class="bg-red-500/20 border border-red-500/30 rounded-xl p-4 text-red-200">❌ ${result.error || 'Upload failed'}</div>`;
+                }
+            } catch (error) {
+                excelUploadMessage.innerHTML = `<div class="bg-red-500/20 border border-red-500/30 rounded-xl p-4 text-red-200">❌ Network error. Please try again.</div>`;
+            }
+            
+            excelUploadBtn.disabled = false;
+            excelUploadBtn.textContent = 'Upload and Process Excel File';
+        });
+
+        // Toggle functions for showing all skipped/duplicate names
+        function toggleSkipped() {
+            const more = document.getElementById('skipped-more');
+            const toggle = document.getElementById('skipped-toggle');
+            
+            if (more && toggle) {
+                if (more.style.display === 'none') {
+                    more.style.display = 'inline';
+                    toggle.textContent = 'Show less';
+                } else {
+                    more.style.display = 'none';
+                    const remaining = toggle.textContent.match(/\d+/);
+                    toggle.textContent = 'Show all (' + remaining + ' more)';
+                }
+            }
+        }
+
+        function toggleDuplicates() {
+            const more = document.getElementById('duplicates-more');
+            const toggle = document.getElementById('duplicates-toggle');
+            
+            if (more && toggle) {
+                if (more.style.display === 'none') {
+                    more.style.display = 'inline';
+                    toggle.textContent = 'Show less';
+                } else {
+                    more.style.display = 'none';
+                    const remaining = toggle.textContent.match(/\d+/);
+                    toggle.textContent = 'Show all (' + remaining + ' more)';
+                }
+            }
+        }
+
+        // Load corporate accounts
+        async function loadCorporateAccounts() {
+            const accountsList = document.getElementById('corporateAccountsList');
+            accountsList.innerHTML = '<div class="loading">Loading corporate accounts...</div>';
+            
+            try {
+                const response = await fetch('/api/corporate_accounts', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
+                });
+                const result = await response.json();
+                
+                if (response.ok) {
+                    if (result.corporate_accounts && result.corporate_accounts.length > 0) {
+                        accountsList.innerHTML = `
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-white">
+                                    <thead>
+                                        <tr class="border-b border-white/20">
+                                            <th class="text-left py-3 px-4 w-12">
+                                                <input type="checkbox" id="selectAllCorporates" onchange="toggleSelectAllCorporates()" class="w-4 h-4 rounded cursor-pointer">
+                                            </th>
+                                            <th class="text-left py-3 px-4">Corporate Name</th>
+                                            <th class="text-left py-3 px-4">Counter</th>
+                                            <th class="text-left py-3 px-4">Staff Passkey</th>
+                                            <th class="text-left py-3 px-4">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${result.corporate_accounts.map(corporate => `
+                                            <tr class="border-b border-white/10 hover:bg-white/5">
+                                                <td class="py-3 px-4">
+                                                    <input type="checkbox" class="corporate-checkbox w-4 h-4 rounded cursor-pointer" value="${corporate.corporate_name.replace(/'/g, "\\'")}" onchange="updateSelectedCount()">
+                                                </td>
+                                                <td class="py-3 px-4">${corporate.corporate_name}</td>
+                                                <td class="py-3 px-4">${corporate.counter}</td>
+                                                <td class="py-3 px-4 font-mono">${corporate.staff_passkey || 'N/A'}</td>
+                                                <td class="py-3 px-4">
+                                                    <button onclick="editCorporate('${corporate.corporate_name.replace(/'/g, "\\'")}')" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm mr-2">
+                                                        Edit
+                                                    </button>
+                                                    <button onclick="deleteCorporate('${corporate.corporate_name.replace(/'/g, "\\'")}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
+                                                        Delete
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        `;
+                        updateSelectedCount();
+                    } else {
+                        accountsList.innerHTML = '<p class="text-white/60">No corporate accounts found</p>';
+                        const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+                        if (bulkDeleteBtn) {
+                            bulkDeleteBtn.classList.add('hidden');
+                        }
+                    }
+                } else {
+                    accountsList.innerHTML = '<p class="text-red-400">Error loading corporate accounts</p>';
+                    const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+                    if (bulkDeleteBtn) {
+                        bulkDeleteBtn.classList.add('hidden');
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                accountsList.innerHTML = '<p class="text-red-400">Network error. Please try again.</p>';
+            }
+        }
+
+        // Edit corporate account
+        async function editCorporate(corporateName) {
+            const newCounter = prompt('New counter name (leave blank to skip):', corporateName) || '';
+            const newPasskey = prompt('New passkey (leave blank to skip):', '') || '';
+            if (!newCounter && !newPasskey) return;
+            
+            try {
+                const resp = await fetch('/api/update_corporate_account', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    },
+                    body: JSON.stringify({
+                        corporate_name: corporateName,
+                        counter: newCounter,
+                        passkey: newPasskey
+                    })
+                });
+                
+                const result = await resp.json();
+                if (resp.ok) {
+                    alert('Corporate account updated successfully');
+                    loadCorporateAccounts();
+                } else {
+                    alert(result.error || 'Failed to update corporate account');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Network error. Please try again.');
+            }
+        }
+
+        // Delete corporate account
+        async function deleteCorporate(corporateName) {
+            if (!confirm('Delete this corporate account?')) return;
+            
+            try {
+                const resp = await fetch('/api/delete_corporate_account', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    },
+                    body: JSON.stringify({
+                        corporate_name: corporateName
+                    })
+                });
+                
+                const result = await resp.json();
+                if (resp.ok) {
+                    alert('Corporate account deleted successfully');
+                    loadCorporateAccounts();
+                } else {
+                    alert(result.error || 'Failed to delete corporate account');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Network error. Please try again.');
+            }
+        }
+
+        // Toggle select all corporates
+        function toggleSelectAllCorporates() {
+            const selectAll = document.getElementById('selectAllCorporates');
+            const checkboxes = document.querySelectorAll('.corporate-checkbox');
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAll.checked;
+            });
+            
+            updateSelectedCount();
+        }
+
+        // Update selected count and show/hide bulk delete button
+        function updateSelectedCount() {
+            const checkboxes = document.querySelectorAll('.corporate-checkbox:checked');
+            const count = checkboxes.length;
+            const selectedCountSpan = document.getElementById('selectedCount');
+            const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+            
+            if (selectedCountSpan) {
+                selectedCountSpan.textContent = count;
+            }
+            
+            if (bulkDeleteBtn) {
+                if (count > 0) {
+                    bulkDeleteBtn.classList.remove('hidden');
+                } else {
+                    bulkDeleteBtn.classList.add('hidden');
+                }
+            }
+            
+            // Update select all checkbox state
+            const selectAll = document.getElementById('selectAllCorporates');
+            if (selectAll) {
+                const allCheckboxes = document.querySelectorAll('.corporate-checkbox');
+                selectAll.checked = allCheckboxes.length > 0 && checkboxes.length === allCheckboxes.length;
+            }
+        }
+
+        // Bulk delete selected corporates
+        async function bulkDeleteCorporates() {
+            const checkboxes = document.querySelectorAll('.corporate-checkbox:checked');
+            const selectedNames = Array.from(checkboxes).map(cb => cb.value);
+            
+            if (selectedNames.length === 0) {
+                alert('Please select at least one corporate account to delete.');
+                return;
+            }
+            
+            const confirmMessage = selectedNames.length === 1 
+                ? `Delete "${selectedNames[0]}"?`
+                : `Delete ${selectedNames.length} selected corporate account(s)?\n\nThis cannot be undone.`;
+            
+            if (!confirm(confirmMessage)) return;
+            
+            const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+            const originalText = bulkDeleteBtn.innerHTML;
+            bulkDeleteBtn.disabled = true;
+            bulkDeleteBtn.innerHTML = 'Deleting...';
+            
+            try {
+                const resp = await fetch('/api/bulk_delete_corporate_accounts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    },
+                    body: JSON.stringify({
+                        corporate_names: selectedNames
+                    })
+                });
+                
+                const result = await resp.json();
+                
+                if (resp.ok) {
+                    let message = result.message;
+                    if (result.not_found && result.not_found.length > 0) {
+                        message += `\n\nNot found: ${result.not_found.join(', ')}`;
+                    }
+                    alert(message);
+                    loadCorporateAccounts();
+                } else {
+                    alert(result.error || 'Failed to delete corporate accounts');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Network error. Please try again.');
+            } finally {
+                bulkDeleteBtn.disabled = false;
+                bulkDeleteBtn.innerHTML = originalText;
+            }
+        }
+    </script>
+</body>
+</html>

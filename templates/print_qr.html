@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Funfair 2025 - QR Code</title>
+    <style>
+        @media print {
+            @page {
+                margin: 0;
+                size: A4;
+            }
+            body {
+                margin: 0;
+                padding: 20px;
+            }
+            .no-print {
+                display: none !important;
+            }
+            /* Hide browser elements */
+            header, footer, nav, aside {
+                display: none !important;
+            }
+        }
+        
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background: #fff;
+        }
+        
+        .container { 
+            max-width: 600px; 
+            margin: 0 auto; 
+            text-align: center; 
+        }
+        
+        h1 {
+            font-size: 32px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .qr { 
+            background: #fff; 
+            padding: 20px; 
+            border-radius: 12px; 
+            display: inline-block;
+            margin: 20px 0;
+        }
+        
+        .qr img {
+            max-width: 300px;
+            width: 100%;
+            height: auto;
+        }
+        
+        .meta { 
+            margin-top: 20px; 
+            color: #333;
+            font-size: 16px;
+            line-height: 1.8;
+        }
+        
+        .meta div {
+            margin: 8px 0;
+        }
+        
+        .btn { 
+            margin-top: 20px; 
+            padding: 12px 24px; 
+            background: #007bff; 
+            color: #fff; 
+            border: 0; 
+            border-radius: 6px; 
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .btn:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Funfair 2025</h1>
+        <div class="qr">
+            <img id="qrImg" alt="QR Code"/>
+        </div>
+        <div class="meta">
+            <div id="name"></div>
+            <div id="ticket_id"></div>
+            <div id="balance"></div>
+            <div id="issued"></div>
+        </div>
+        <button class="btn no-print" onclick="window.print()">Print</button>
+    </div>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        document.getElementById('qrImg').src = 'data:image/png;base64,' + (params.get('qr_image') || '');
+        document.getElementById('name').textContent = 'Name: ' + (params.get('visitor_name') || '');
+        document.getElementById('ticket_id').textContent = 'Ticket ID: ' + (params.get('ticket_id') || '');
+        document.getElementById('balance').textContent = 'Balance: AED ' + (params.get('balance') || '');
+        document.getElementById('issued').textContent = 'Issued: ' + (params.get('issue_date') || '');
+    </script>
+</body>
+</html>
+
+

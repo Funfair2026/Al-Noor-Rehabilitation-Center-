@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal - Funfair 2025</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'glow': 'glow 2s ease-in-out infinite alternate',
+                        'slide-up': 'slideUp 0.6s ease-out',
+                        'fade-in': 'fadeIn 0.8s ease-out',
+                        'pulse-slow': 'pulse 3s infinite',
+                        'bounce-slow': 'bounce 3s infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        },
+                        glow: {
+                            '0%': { boxShadow: '0 0 20px rgba(59, 130, 246, 0.5)' },
+                            '100%': { boxShadow: '0 0 40px rgba(59, 130, 246, 0.8)' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(30px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <!-- Animated Background -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute -top-40 -right-40 w-80 h-80 bg-blue-400 opacity-10 rounded-full animate-float"></div>
+        <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-400 opacity-10 rounded-full animate-float" style="animation-delay: 2s;"></div>
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-indigo-400 opacity-10 rounded-full animate-pulse-slow"></div>
+    </div>
+
+    <div class="relative z-10 min-h-screen p-4">
+        <div class="max-w-7xl mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-12 animate-fade-in relative">
+                <!-- Sign Out Button -->
+                <div class="absolute top-0 right-0 md:top-0 md:right-0">
+                    <button id="signOutBtn" 
+                            class="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 md:px-6 py-2 md:py-2.5 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center space-x-2 text-sm md:text-base">
+                        <span>🚪</span>
+                        <span class="hidden sm:inline">Sign Out</span>
+                        <span class="sm:hidden">Out</span>
+                    </button>
+                </div>
+                
+                <div class="inline-block p-4 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl mb-6 animate-glow">
+                    <span class="text-5xl"></span>
+                </div>
+                <h1 class="text-5xl md:text-6xl font-bold text-white mb-4 drop-shadow-2xl">
+                    Admin Portal
+                </h1>
+                <p class="text-xl text-white/80 max-w-2xl mx-auto">
+                    Complete system management and monitoring dashboard
+                </p>
+                <div class="mt-6 flex justify-center space-x-4">
+                    <span class="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white text-sm">Secure Access</span>
+                    <span class="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white text-sm">Live Monitoring</span>
+                    <span class="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white text-sm">Funfair 2025</span>
+                </div>
+            </div>
+
+            <!-- Warning Box -->
+            <div class="mb-8 animate-slide-up">
+                <div class="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 backdrop-blur-lg border border-yellow-500/30 rounded-2xl p-6">
+                    <div class="flex items-center justify-center text-yellow-200">
+                        <span class="text-2xl mr-3"></span>
+                        <div>
+                            <h3 class="text-lg font-bold">Restricted Access</h3>
+                            <p class="text-sm opacity-90">This portal is for authorized administrators only. All activities are logged and monitored.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Cards -->
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                
+                <!-- Complete Admin Dashboard -->
+                <div class="group relative animate-slide-up">
+                    <div class="absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-glow"></div>
+                    <div class="relative bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-2 hover:scale-105">
+                        <div class="text-center">
+                            <div class="text-4xl mb-4 animate-bounce-slow">🛠️</div>
+                            <h3 class="text-xl font-bold text-white mb-3">CRUD Operations</h3>
+                            <p class="text-white/80 mb-4 text-sm">Full CRUD operations for all entities</p>
+                            <a href="/admin_dashboard" class="block w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 transform hover:scale-105">
+                                Open Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Issue QR Code -->
+                <div class="group relative animate-slide-up" style="animation-delay: 0.1s;">
+                    <div class="absolute inset-0 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-glow"></div>
+                    <div class="relative bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-2 hover:scale-105">
+                        <div class="text-center">
+                            <div class="text-4xl mb-4 animate-bounce-slow" style="animation-delay: 0.3s;">📱</div>
+                            <h3 class="text-xl font-bold text-white mb-3">Issue QR Code</h3>
+                            <p class="text-white/80 mb-4 text-sm">Create and issue new QR codes</p>
+                            <a href="/admin/issue-coupon" class="block w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 transform hover:scale-105">
+                                Issue QR Code
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recharge QR Code -->
+                <div class="group relative animate-slide-up" style="animation-delay: 0.15s;">
+                    <div class="absolute inset-0 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-glow"></div>
+                    <div class="relative bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-2 hover:scale-105">
+                        <div class="text-center">
+                            <div class="text-4xl mb-4 animate-bounce-slow" style="animation-delay: 0.4s;">💳</div>
+                            <h3 class="text-xl font-bold text-white mb-3">Recharge QR Code</h3>
+                            <p class="text-white/80 mb-4 text-sm">Add balance to existing QR codes</p>
+                            <a href="/admin/recharge-coupon" class="block w-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 transform hover:scale-105">
+                                Recharge QR Code
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View Visitor QR Codes -->
+                <div class="group relative animate-slide-up" style="animation-delay: 0.18s;">
+                    <div class="absolute inset-0 bg-gradient-to-r from-cyan-500 to-teal-500 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-glow"></div>
+                    <div class="relative bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-2 hover:scale-105">
+                        <div class="text-center">
+                            <div class="text-4xl mb-4 animate-bounce-slow" style="animation-delay: 0.45s;">🔍</div>
+                            <h3 class="text-xl font-bold text-white mb-3">View QR Codes</h3>
+                            <p class="text-white/80 mb-4 text-sm">View all visitor QR codes</p>
+                            <a href="/admin/view-visitor-qrcodes" class="block w-full bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 transform hover:scale-105">
+                                View QR Codes
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Generate Reports -->
+                <div class="group relative animate-slide-up" style="animation-delay: 0.2s;">
+                    <div class="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-glow"></div>
+                    <div class="relative bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-2 hover:scale-105">
+                        <div class="text-center">
+                            <div class="text-4xl mb-4 animate-bounce-slow" style="animation-delay: 0.5s;">📊</div>
+                            <h3 class="text-xl font-bold text-white mb-3">Reports</h3>
+                            <p class="text-white/80 mb-4 text-sm">Download comprehensive Excel report</p>
+                            <a href="/generate_reports" class="block w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 transform hover:scale-105">
+                                View Reports
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Logs (Super Admin Only) -->
+                <div id="systemLogsCard" class="group relative animate-slide-up hidden" style="animation-delay: 0.25s;">
+                    <div class="absolute inset-0 bg-gradient-to-r from-red-500 to-pink-500 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-glow"></div>
+                    <div class="relative bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-2 hover:scale-105">
+                        <div class="text-center">
+                            <div class="text-4xl mb-4 animate-bounce-slow" style="animation-delay: 1s;">📋</div>
+                            <h3 class="text-xl font-bold text-white mb-3">System Logs</h3>
+                            <p class="text-white/80 mb-4 text-sm">Audit trail and activity logs (Super Admin only)</p>
+                            <a href="/system_logs" class="block w-full bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 transform hover:scale-105">
+                                View Logs
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Admin Functions Info -->
+            <div class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-8 animate-fade-in" style="animation-delay: 0.6s;">
+                <h3 class="text-2xl font-bold text-white mb-6 text-center">Admin Functions</h3>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div class="flex items-start space-x-3">
+                            <span class="text-green-400 text-xl">•</span>
+                            <div>
+                                <h4 class="text-white font-semibold">Generate Reports</h4>
+                                <p class="text-white/70 text-sm">Download comprehensive Excel report with all user data</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <span class="text-green-400 text-xl">•</span>
+                            <div>
+                                <h4 class="text-white font-semibold">Live Dashboard</h4>
+                                <p class="text-white/70 text-sm">Real-time monitoring of sales, top-ups, and system activity</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <span class="text-green-400 text-xl">•</span>
+                            <div>
+                                <h4 class="text-white font-semibold">Issue QR Codes</h4>
+                                <p class="text-white/70 text-sm">Create and issue new QR codes for visitors</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <span class="text-green-400 text-xl">•</span>
+                            <div>
+                                <h4 class="text-white font-semibold">Recharge QR Codes</h4>
+                                <p class="text-white/70 text-sm">Add balance to existing QR codes</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex items-start space-x-3">
+                            <span class="text-green-400 text-xl">•</span>
+                            <div>
+                                <h4 class="text-white font-semibold">View Visitor QR Codes</h4>
+                                <p class="text-white/70 text-sm">View and print all visitor QR codes</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <span class="text-green-400 text-xl">•</span>
+                            <div>
+                                <h4 class="text-white font-semibold">Security Monitoring</h4>
+                                <p class="text-white/70 text-sm">Track all admin activities and system access</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <span class="text-green-400 text-xl">•</span>
+                            <div>
+                                <h4 class="text-white font-semibold">Complete CRUD</h4>
+                                <p class="text-white/70 text-sm">Full Create, Read, Update, Delete operations</p>
+                            </div>
+                        </div>
+                        <div id="systemLogsFunction" class="flex items-start space-x-3 hidden">
+                            <span class="text-green-400 text-xl">•</span>
+                            <div>
+                                <h4 class="text-white font-semibold">System Logs</h4>
+                                <p class="text-white/70 text-sm">View audit trail and activity logs (Super Admin only)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Back Button -->
+            <div class="mt-8 text-center animate-slide-up" style="animation-delay: 0.8s;">
+                <a 
+                    href="/" 
+                    class="inline-flex items-center bg-white/10 hover:bg-white/20 backdrop-blur-lg border border-white/20 text-white px-6 py-3 rounded-xl transition-all duration-300 transform hover:scale-105"
+                >
+                    <span class="mr-2"></span>
+                    Back to Home
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating particles -->
+    <div class="fixed inset-0 pointer-events-none overflow-hidden">
+        <div class="absolute top-1/4 left-1/4 w-2 h-2 bg-blue-400/30 rounded-full animate-ping" style="animation-delay: 0s;"></div>
+        <div class="absolute top-3/4 left-3/4 w-3 h-3 bg-purple-400/40 rounded-full animate-ping" style="animation-delay: 2s;"></div>
+        <div class="absolute top-1/2 left-1/3 w-1 h-1 bg-pink-400/50 rounded-full animate-ping" style="animation-delay: 4s;"></div>
+        <div class="absolute top-1/3 right-1/4 w-2 h-2 bg-indigo-400/40 rounded-full animate-ping" style="animation-delay: 6s;"></div>
+    </div>
+
+    <script>
+        // Sign out function
+        async function signOut() {
+            try {
+                const token = localStorage.getItem('admin_token');
+                if (token) {
+                    // Call sign out endpoint to log the action
+                    try {
+                        await fetch('/api/admin/signout', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                    } catch (e) {
+                        console.error('Error calling sign out endpoint:', e);
+                    }
+                }
+            } catch (e) {
+                console.error('Error during sign out:', e);
+            } finally {
+                // Clear token and redirect regardless of API call success
+                localStorage.removeItem('admin_token');
+                window.location.href = '/admin_login';
+            }
+        }
+
+        // Check admin authentication and role
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('admin_token');
+            if (!token) {
+                window.location.href = '/admin_login';
+                return;
+            }
+
+            try {
+                // Decode JWT token to get user role
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                const userRole = payload.role;
+                
+                // Show System Logs card and function only for super admins
+                if (userRole === 'super_admin') {
+                    const systemLogsCard = document.getElementById('systemLogsCard');
+                    const systemLogsFunction = document.getElementById('systemLogsFunction');
+                    
+                    if (systemLogsCard) {
+                        systemLogsCard.classList.remove('hidden');
+                    }
+                    if (systemLogsFunction) {
+                        systemLogsFunction.classList.remove('hidden');
+                    }
+                }
+                
+                // Add sign out button event listener
+                const signOutBtn = document.getElementById('signOutBtn');
+                if (signOutBtn) {
+                    signOutBtn.addEventListener('click', signOut);
+                }
+            } catch (e) {
+                console.error('Error decoding token:', e);
+                // If token is invalid, redirect to login
+                window.location.href = '/admin_login';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authenticator - Funfair</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 10px; }
+        .form-group { margin: 15px 0; }
+        label { display: block; font-weight: bold; margin-bottom: 6px; }
+        select, input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+        .btn { background: #6f42c1; color: #fff; border: 0; padding: 12px; border-radius: 6px; width: 100%; cursor: pointer; margin-top: 10px; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 12px; border-radius: 6px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Authenticate Stall Staff</h2>
+        <div class="form-group">
+            <label for="user">Select Stall User</label>
+            <select id="user">
+                <!-- Server will render options -->
+                {% for u in users %}
+                <option value="{{ u[0] }}">{{ u[0] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="pass_key">Pass Key</label>
+            <input type="password" id="pass_key" placeholder=""/>
+        </div>
+        <button class="btn" id="submitBtn">Continue</button>
+        <div id="msg"></div>
+    </div>
+    <script>
+        const ticketId = '{{ ticket_id }}';
+        document.getElementById('submitBtn').addEventListener('click', async function() {
+            const user = document.getElementById('user').value;
+            const pass_key = document.getElementById('pass_key').value;
+            const resp = await fetch('/validate_passkey', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user, pass_key, ticket_id: ticketId })
+            });
+            const result = await resp.json();
+            if (resp.ok && result.success) {
+                window.location.href = `/deduct_balance?ticket_id=${encodeURIComponent(ticketId)}&user=${encodeURIComponent(user)}`;
+            } else {
+                document.getElementById('msg').innerHTML = `<div class="error">${result.message || 'Authentication failed'}</div>`;
+            }
+        });
+    </script>
+</body>
+</html>
+
+
+
+

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Dashboard - Funfair 2025</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4">
+    <script>
+        // Token validation
+        function validateToken() {
+            const token = localStorage.getItem('admin_token');
+            if (!token) {
+                window.location.href = '/admin_login';
+                return false;
+            }
+            
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                const now = Math.floor(Date.now() / 1000);
+                if (payload.exp < now) {
+                    localStorage.removeItem('admin_token');
+                    window.location.href = '/admin_login';
+                    return false;
+                }
+            } catch (e) {
+                localStorage.removeItem('admin_token');
+                window.location.href = '/admin_login';
+                return false;
+            }
+            
+            return true;
+        }
+
+        // Check token on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!validateToken()) {
+                return;
+            }
+        });
+    </script>
+    <div class="max-w-6xl mx-auto">
+        <div class="text-center mb-10">
+            <div class="inline-block p-4 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl mb-4">
+                <span class="text-5xl text-white"></span>
+            </div>
+            <h1 class="text-4xl font-bold text-white">Live Dashboard</h1>
+            <p class="text-white/70 mt-2">Real-time overview of activity</p>
+        </div>
+
+        <div class="mb-6 text-center">
+            <a href="/admin" class="inline-flex items-center bg-white/10 hover:bg-white/20 backdrop-blur-lg border border-white/20 text-white px-6 py-3 rounded-xl">← Back to Admin Portal</a>
+        </div>
+
+        <div class="flex justify-end mb-4">
+            <button class="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold py-2 px-4 rounded-xl" onclick="refreshDashboard()">Refresh Data</button>
+        </div>
+
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 text-center">
+                <h3 class="text-white/80">Total Revenue</h3>
+                <div id="totalRevenue" class="text-3xl font-bold text-blue-400 mt-2">AED 0</div>
+                <p class="text-white/60 text-sm mt-1">All transactions combined</p>
+            </div>
+            <div class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 text-center">
+                <h3 class="text-white/80">QR Codes Issued</h3>
+                <div id="qrCodesIssued" class="text-3xl font-bold text-cyan-400 mt-2">0</div>
+                <p class="text-white/60 text-sm mt-1">New coupons created</p>
+            </div>
+            <div class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 text-center">
+                <h3 class="text-white/80">Top-ups Today</h3>
+                <div id="topUpsToday" class="text-3xl font-bold text-green-400 mt-2">0</div>
+                <p class="text-white/60 text-sm mt-1">Recharge transactions</p>
+            </div>
+            <div class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 text-center">
+                <h3 class="text-white/80">Active Corporates</h3>
+                <div id="activeCorporates" class="text-3xl font-bold text-purple-400 mt-2">0</div>
+                <p class="text-white/60 text-sm mt-1">Corporates with transactions</p>
+            </div>
+            <div class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 text-center">
+                <h3 class="text-white/80">System Status</h3>
+                <div class="text-2xl font-bold text-emerald-400 mt-2">Online</div>
+                <p class="text-white/60 text-sm mt-1">All systems operational</p>
+            </div>
+            <div class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 text-center">
+                <h3 class="text-white/80">Peak Hour</h3>
+                <div id="peakHour" class="text-3xl font-bold text-yellow-400 mt-2">--:--</div>
+                <p class="text-white/60 text-sm mt-1">Highest activity time</p>
+            </div>
+        </div>
+
+        <div class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6">
+            <h3 class="text-white font-semibold mb-3">Recent Activity</h3>
+            <div id="recentActivity" class="text-white/80 min-h-[100px]">Loading recent activity...</div>
+        </div>
+    </div>
+
+    <script>
+        async function refreshDashboard() {
+            try {
+                const token = localStorage.getItem('admin_token');
+                const response = await fetch('/api/dashboard_data', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Update dashboard with real data
+                    document.getElementById('totalRevenue').textContent = 'AED ' + data.total_revenue.toFixed(2);
+                    document.getElementById('qrCodesIssued').textContent = data.qr_codes_today;
+                    document.getElementById('topUpsToday').textContent = data.topups_today;
+                    document.getElementById('activeCorporates').textContent = data.active_corporates;
+                    
+                    // Find peak hour
+                    if (data.hourly_revenue.length > 0) {
+                        const peakHour = data.hourly_revenue.reduce((max, hour) => 
+                            hour.total > max.total ? hour : max
+                        );
+                        document.getElementById('peakHour').textContent = peakHour.hour + ':00';
+                    }
+                    
+                    // Update recent activity
+                    const recentActivity = document.getElementById('recentActivity');
+                    if (data.recent_transactions.length > 0) {
+                        recentActivity.innerHTML = data.recent_transactions.map(transaction => {
+                            // Format time in UAE timezone
+                            let formattedTime = '';
+                            if (transaction.time) {
+                                const date = new Date(transaction.time);
+                                formattedTime = date.toLocaleString('en-US', {
+                                    timeZone: 'Asia/Dubai',
+                                    year: 'numeric',
+                                    month: '2-digit',
+                                    day: '2-digit',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    second: '2-digit',
+                                    hour12: true
+                                });
+                            }
+                            return `<p>${transaction.customer} paid AED ${transaction.amount} at ${transaction.name} - ${formattedTime}</p>`;
+                        }).join('');
+                    } else {
+                        recentActivity.innerHTML = '<p>No recent transactions</p>';
+                    }
+                } else {
+                    console.error('Failed to fetch dashboard data');
+                }
+            } catch (error) {
+                console.error('Error refreshing dashboard:', error);
+            }
+        }
+
+        // Auto-refresh every 30 seconds
+        setInterval(refreshDashboard, 30000);
+        
+        // Initial load
+        refreshDashboard();
+    </script>
+</body>
+</html>

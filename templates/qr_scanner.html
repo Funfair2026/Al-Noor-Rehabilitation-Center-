@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Scanner - Funfair 2025</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .scanner-container {
+            margin: 20px 0;
+            text-align: center;
+        }
+        #qr-reader {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        .manual-input {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+        .form-group {
+            margin: 20px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin: 5px 0;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn-secondary {
+            background: #6c757d;
+        }
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        .back-btn {
+            display: inline-block;
+            background: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .balance-display {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .error-message {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .info-box {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .qr-result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>QR Code Scanner</h1>
+        
+        <div class="info-box">
+            <h3>Scan QR Code to Check Balance</h3>
+            <p>Point your camera at a visitor's QR code to instantly check their balance, or manually enter the ticket ID.</p>
+        </div>
+
+        <div class="scanner-container">
+            <div id="qr-reader"></div>
+            <button class="btn btn-secondary" onclick="startScanner()">Start Camera Scanner</button>
+            <button class="btn btn-secondary" onclick="stopScanner()">Stop Scanner</button>
+        </div>
+
+        <div id="scanner-result" class="qr-result" style="display: none;">
+            <h4>Scanned QR Code:</h4>
+            <p id="scanned-data"></p>
+            <button class="btn" onclick="checkBalanceFromQR()">Check Balance</button>
+        </div>
+
+        <div class="manual-input">
+            <h3>Or Enter Ticket ID Manually:</h3>
+            <form id="manualForm">
+                <div class="form-group">
+                    <label for="ticket_id">Ticket ID:</label>
+                    <input type="text" id="ticket_id" name="ticket_id" required placeholder="">
+                </div>
+                
+                <button type="submit" class="btn">Check Balance</button>
+            </form>
+        </div>
+
+        <div id="message"></div>
+
+        <a href="/" class="back-btn">← Back to Home</a>
+    </div>
+
+    <script src="https://unpkg.com/html5-qrcode@2.0.11/html5-qrcode.min.js"></script>
+    <script>
+        let html5QrcodeScanner = null;
+        let currentTicketId = null;
+
+        function startScanner() {
+            if (html5QrcodeScanner) {
+                stopScanner();
+            }
+
+            html5QrcodeScanner = new Html5Qrcode("qr-reader");
+            const qrCodeSuccessCallback = (decodedText, decodedResult) => {
+                console.log(`QR Code detected: ${decodedText}`);
+                handleQRCode(decodedText);
+            };
+
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+            html5QrcodeScanner.start(
+                { facingMode: "environment" }, // Use back camera
+                config,
+                qrCodeSuccessCallback
+            ).catch(err => {
+                console.error("Error starting scanner:", err);
+                document.getElementById('message').innerHTML = 
+                    '<div class="error-message">Error starting camera. Please check permissions or use manual entry.</div>';
+            });
+        }
+
+        function stopScanner() {
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.stop().then(() => {
+                    html5QrcodeScanner.clear();
+                    html5QrcodeScanner = null;
+                }).catch(err => {
+                    console.error("Error stopping scanner:", err);
+                });
+            }
+        }
+
+        function handleQRCode(qrData) {
+            // Extract ticket ID from QR code URL
+            const urlParams = new URLSearchParams(qrData.split('?')[1]);
+            const ticketId = urlParams.get('ticket_id');
+            
+            if (ticketId) {
+                currentTicketId = ticketId;
+                document.getElementById('scanned-data').textContent = `Ticket ID: ${ticketId}`;
+                document.getElementById('scanner-result').style.display = 'block';
+                stopScanner();
+            } else {
+                document.getElementById('message').innerHTML = 
+                    '<div class="error-message">Invalid QR code format. Please use a valid funfair QR code.</div>';
+            }
+        }
+
+        function checkBalanceFromQR() {
+            if (currentTicketId) {
+                checkBalance(currentTicketId);
+            }
+        }
+
+        document.getElementById('manualForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const ticketId = document.getElementById('ticket_id').value;
+            checkBalance(ticketId);
+        });
+
+        async function checkBalance(ticketId) {
+            const messageDiv = document.getElementById('message');
+            
+            try {
+                const response = await fetch(`/check_balance_by_ticket?ticket_id=${ticketId}`);
+                const result = await response.json();
+                
+                if (response.ok) {
+                    messageDiv.innerHTML = `
+                        <div class="balance-display">
+                            Visitor: ${result.visitor_name}<br>
+                            Current Balance: AED ${result.balance}
+                        </div>
+                    `;
+                } else {
+                    messageDiv.innerHTML = '<div class="error-message">' + result.error + '</div>';
+                }
+            } catch (error) {
+                messageDiv.innerHTML = '<div class="error-message">Network error. Please try again.</div>';
+            }
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', stopScanner);
+    </script>
+</body>
+</html>

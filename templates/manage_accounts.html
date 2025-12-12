@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Accounts - Funfair 2025</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .success-message {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            color: #86efac;
+            margin-bottom: 1rem;
+        }
+        .error-message {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            color: #fca5a5;
+            margin-bottom: 1rem;
+        }
+        .loading {
+            color: rgba(255, 255, 255, 0.6);
+            padding: 1rem;
+            text-align: center;
+        }
+        .accounts-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        .accounts-table th {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            font-weight: 600;
+        }
+        .accounts-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.8);
+        }
+        .accounts-table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            margin-right: 0.5rem;
+            transition: all 0.2s;
+        }
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .btn-secondary {
+            background: rgba(99, 102, 241, 0.3);
+            border-color: rgba(99, 102, 241, 0.5);
+        }
+        .btn-secondary:hover {
+            background: rgba(99, 102, 241, 0.4);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4">
+    <script>
+        // Token validation
+        function validateToken() {
+            const token = localStorage.getItem('admin_token');
+            if (!token) {
+                window.location.href = '/admin_login';
+                return false;
+            }
+            
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                const now = Math.floor(Date.now() / 1000);
+                if (payload.exp < now) {
+                    localStorage.removeItem('admin_token');
+                    window.location.href = '/admin_login';
+                    return false;
+                }
+            } catch (e) {
+                localStorage.removeItem('admin_token');
+                window.location.href = '/admin_login';
+                return false;
+            }
+            
+            return true;
+        }
+
+        // Check token on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!validateToken()) {
+                return;
+            }
+        });
+    </script>
+    <div class="max-w-6xl mx-auto">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-white">Manage Accounts</h1>
+                <p class="text-white/70">Create and manage corporate accounts</p>
+            </div>
+            <a href="/admin" class="inline-flex items-center bg-white/10 hover:bg-white/20 backdrop-blur-lg border border-white/20 text-white px-6 py-3 rounded-xl">← Back to Admin</a>
+        </div>
+
+        <!-- Upload Excel File -->
+        <div class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 mb-6">
+            <h3 class="text-xl font-semibold text-white mb-4">📤 Upload Excel File (Bulk Import)</h3>
+            <p class="text-white/60 mb-4 text-sm">Upload an Excel file (.xlsx or .xls) with columns: <strong>Corporate Name</strong>, <strong>Counter</strong>, <strong>Staff Passkey</strong></p>
+            
+            <div class="border-2 border-dashed border-white/30 rounded-xl p-6 mb-4 bg-white/5 hover:bg-white/10 transition-colors" id="dropZone">
+                <input type="file" id="excelFileInput" accept=".xlsx,.xls" class="hidden">
+                <div class="text-center">
+                    <div class="text-4xl mb-2">📁</div>
+                    <p class="text-white/80 mb-2">Drag and drop Excel file here</p>
+                    <p class="text-white/60 text-sm mb-4">or</p>
+                    <button type="button" onclick="document.getElementById('excelFileInput').click()" class="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold py-2 px-6 rounded-xl">
+                        Browse Files
+                    </button>
+                </div>
+                <div id="fileName" class="mt-4 text-center text-white/70 text-sm hidden"></div>
+            </div>
+            
+            <button type="button" id="uploadBtn" class="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold py-3 px-6 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                Upload and Process Excel File
+            </button>
+            
+            <div id="uploadMessage" class="mt-4"></div>
+        </div>
+
+        <!-- Create New Corporate Account -->
+        <div class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 mb-6">
+            <h3 class="text-xl font-semibold text-white mb-4">➕ Create New Corporate Account</h3>
+            <form id="createCorporateForm" class="grid md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-white/80 mb-2" for="corporate_name">Corporate Name</label>
+                    <input class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50" type="text" id="corporate_name" name="corporate_name" required placeholder="">
+                </div>
+                <div>
+                    <label class="block text-white/80 mb-2" for="counter">Counter</label>
+                    <input class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50" type="text" id="counter" name="counter" required placeholder="">
+                </div>
+                <div>
+                    <label class="block text-white/80 mb-2" for="staff_passkey">Staff Passkey</label>
+                    <input class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50" type="text" id="staff_passkey" name="staff_passkey" required placeholder="">
+                </div>
+                <div class="md:col-span-2">
+                    <button type="submit" class="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white font-semibold py-3 px-6 rounded-xl" id="createBtn">Create Corporate Account</button>
+                    <button type="button" class="bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold py-3 px-6 rounded-xl" onclick="loadAccounts()">Refresh List</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="message"></div>
+
+        <!-- Existing Accounts -->
+        <div class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 mb-6">
+            <h3 class="text-xl font-semibold text-white mb-4">Existing Corporate Accounts</h3>
+            <div id="accountsList" class="text-white/80">Loading accounts...</div>
+        </div>
+
+        </div>
+    </div>
+    
+    <script>
+        // Load accounts on page load
+        window.addEventListener('load', loadAccounts);
+
+        // Create corporate account form
+        document.getElementById('createCorporateForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const createBtn = document.getElementById('createBtn');
+            const messageDiv = document.getElementById('message');
+            
+            const formData = {
+                corporate_name: document.getElementById('corporate_name').value,
+                counter: document.getElementById('counter').value,
+                staff_passkey: document.getElementById('staff_passkey').value
+            };
+            
+            createBtn.disabled = true;
+            createBtn.textContent = 'Creating...';
+            
+            try {
+                const response = await fetch('/api/create_corporate_account', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    messageDiv.innerHTML = `
+                        <div class="success-message">
+                            ✅ ${result.message}<br>
+                            <strong>Corporate Name:</strong> ${result.corporate_name}<br>
+                            <strong>Passkey:</strong> ${result.passkey}
+                        </div>
+                    `;
+                    
+                    // Clear form
+                    document.getElementById('createCorporateForm').reset();
+                    
+                    // Reload accounts list
+                    loadAccounts();
+                } else {
+                    messageDiv.innerHTML = '<div class="error-message">❌ ' + result.error + '</div>';
+                }
+            } catch (error) {
+                messageDiv.innerHTML = '<div class="error-message">❌ Network error. Please try again.</div>';
+            }
+            
+            createBtn.disabled = false;
+            createBtn.textContent = 'Create Corporate Account';
+        });
+
+        // Load existing accounts
+        async function loadAccounts() {
+            const accountsList = document.getElementById('accountsList');
+            accountsList.innerHTML = '<div class="loading">Loading accounts...</div>';
+            
+            try {
+                const response = await fetch('/api/corporate_accounts', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
+                });
+                const result = await response.json();
+                
+                if (response.ok) {
+                    if (!result.corporate_accounts || result.corporate_accounts.length === 0) {
+                        accountsList.innerHTML = '<div class="loading">No corporate accounts found.</div>';
+                        return;
+                    }
+                    
+                    let tableHTML = `
+                        <table class="accounts-table">
+                            <thead>
+                                <tr>
+                                    <th>Corporate Name</th>
+                                    <th>Passkey</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    
+                    result.corporate_accounts.forEach(corporate => {
+                        tableHTML += `
+                            <tr>
+                                <td><strong>${corporate.corporate_name}</strong></td>
+                                <td><code>${corporate.staff_passkey || 'N/A'}</code></td>
+                                <td><span style="color: #28a745;">Active</span></td>
+                                <td>
+                                    <button class="btn btn-secondary" onclick='editCorporate(${JSON.stringify(corporate)})'>Edit</button>
+                                    <button class="btn" onclick='deleteCorporate("${corporate.corporate_name}")'>Delete</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    
+                    tableHTML += `
+                            </tbody>
+                        </table>
+                        <p style="margin-top: 15px; color: #6c757d;">
+                            <strong>Total Corporates:</strong> ${result.corporate_accounts.length}
+                        </p>
+                    `;
+                    
+                    accountsList.innerHTML = tableHTML;
+                } else {
+                    accountsList.innerHTML = '<div class="error-message">❌ Failed to load accounts: ' + result.error + '</div>';
+                }
+            } catch (error) {
+                accountsList.innerHTML = '<div class="error-message">❌ Network error. Please try again.</div>';
+            }
+        }
+
+        async function editCorporate(corporate) {
+            const newCounter = prompt('New counter name (leave blank to skip):', corporate.counter || corporate.corporate_name) || '';
+            const newPasskey = prompt('New passkey (leave blank to skip):', corporate.passkey) || '';
+            if (!newCounter && !newPasskey) return;
+            try {
+                const resp = await fetch('/api/update_corporate_account', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    },
+                    body: JSON.stringify({ corporate_name: corporate.corporate_name, counter: newCounter.trim() === (corporate.counter||'') ? '' : newCounter.trim(), passkey: newPasskey.trim() === corporate.passkey ? '' : newPasskey.trim() })
+                });
+                if (resp.ok) {
+                    alert('Updated');
+                    loadAccounts();
+                } else {
+                    const err = await resp.json();
+                    alert('Error: ' + (err.error || 'Update failed'));
+                }
+            } catch (e) {
+                alert('Network error');
+            }
+        }
+
+        async function deleteCorporate(corporateName) {
+            if (!confirm('Delete this corporate?')) return;
+            try {
+                const resp = await fetch('/api/delete_corporate_account', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    },
+                    body: JSON.stringify({ corporate_name: corporateName })
+                });
+                if (resp.ok) {
+                    loadAccounts();
+                } else {
+                    const err = await resp.json();
+                    alert('Error: ' + (err.error || 'Delete failed'));
+                }
+            } catch (e) {
+                alert('Network error');
+            }
+        }
+
+        // Excel file upload functionality
+        const excelFileInput = document.getElementById('excelFileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const dropZone = document.getElementById('dropZone');
+        const fileName = document.getElementById('fileName');
+        const uploadMessage = document.getElementById('uploadMessage');
+        let selectedFile = null;
+
+        // File input change
+        excelFileInput.addEventListener('change', function(e) {
+            handleFileSelect(e.target.files[0]);
+        });
+
+        // Drag and drop
+        dropZone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            dropZone.classList.add('border-green-400', 'bg-white/15');
+        });
+
+        dropZone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            dropZone.classList.remove('border-green-400', 'bg-white/15');
+        });
+
+        dropZone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            dropZone.classList.remove('border-green-400', 'bg-white/15');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+
+        function handleFileSelect(file) {
+            if (!file) return;
+            
+            // Validate file type
+            if (!file.name.toLowerCase().endsWith('.xlsx') && !file.name.toLowerCase().endsWith('.xls')) {
+                uploadMessage.innerHTML = '<div class="bg-red-500/20 border border-red-500/30 rounded-xl p-4 text-red-200">❌ Invalid file type. Please upload an Excel file (.xlsx or .xls)</div>';
+                selectedFile = null;
+                uploadBtn.disabled = true;
+                fileName.classList.add('hidden');
+                return;
+            }
+            
+            selectedFile = file;
+            fileName.textContent = `Selected: ${file.name}`;
+            fileName.classList.remove('hidden');
+            uploadBtn.disabled = false;
+            uploadMessage.innerHTML = '';
+        }
+
+        // Upload button click
+        uploadBtn.addEventListener('click', async function() {
+            if (!selectedFile) return;
+            
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = 'Uploading...';
+            uploadMessage.innerHTML = '<div class="bg-blue-500/20 border border-blue-500/30 rounded-xl p-4 text-blue-200">⏳ Processing Excel file...</div>';
+            
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            
+            try {
+                const response = await fetch('/api/upload_corporate_accounts', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    },
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    let messageHTML = `<div class="bg-green-500/20 border border-green-500/30 rounded-xl p-4 text-green-200">`;
+                    messageHTML += `✅ <strong>Success!</strong><br>`;
+                    messageHTML += `• <strong>${result.inserted}</strong> accounts created<br>`;
+                    
+                    if (result.skipped > 0) {
+                        messageHTML += `• <strong>${result.skipped}</strong> skipped (already exist in database)`;
+                        if (result.skipped_names && result.skipped_names.length > 0) {
+                            const showAllSkipped = result.skipped_names.length > 10;
+                            const displayedSkipped = showAllSkipped ? result.skipped_names.slice(0, 10) : result.skipped_names;
+                            const remainingSkipped = result.skipped_names.length - 10;
+                            messageHTML += `<br>&nbsp;&nbsp;Skipped: <span id="skipped-display">${displayedSkipped.join(', ')}</span>`;
+                            if (showAllSkipped) {
+                                messageHTML += `, <span id="skipped-more" style="display:none;">${result.skipped_names.slice(10).join(', ')}</span>`;
+                                messageHTML += ` <button onclick="toggleSkipped()" class="text-blue-300 hover:text-blue-200 underline text-sm cursor-pointer" id="skipped-toggle">Show all (${remainingSkipped} more)</button>`;
+                            }
+                        }
+                    }
+                    
+                    if (result.duplicates_in_file > 0) {
+                        messageHTML += `<br>• <strong>${result.duplicates_in_file}</strong> duplicates found in file (not added)`;
+                        if (result.duplicate_names && result.duplicate_names.length > 0) {
+                            const showAllDuplicates = result.duplicate_names.length > 10;
+                            const displayedDuplicates = showAllDuplicates ? result.duplicate_names.slice(0, 10) : result.duplicate_names;
+                            const remainingDuplicates = result.duplicate_names.length - 10;
+                            messageHTML += `<br>&nbsp;&nbsp;Duplicates: <span id="duplicates-display">${displayedDuplicates.join(', ')}</span>`;
+                            if (showAllDuplicates) {
+                                messageHTML += `, <span id="duplicates-more" style="display:none;">${result.duplicate_names.slice(10).join(', ')}</span>`;
+                                messageHTML += ` <button onclick="toggleDuplicates()" class="text-blue-300 hover:text-blue-200 underline text-sm cursor-pointer" id="duplicates-toggle">Show all (${remainingDuplicates} more)</button>`;
+                            }
+                        }
+                    }
+                    
+                    messageHTML += `</div>`;
+                    uploadMessage.innerHTML = messageHTML;
+                    
+                    // Reset file input
+                    excelFileInput.value = '';
+                    selectedFile = null;
+                    fileName.classList.add('hidden');
+                    
+                    // Reload accounts list
+                    loadAccounts();
+                } else {
+                    uploadMessage.innerHTML = `<div class="bg-red-500/20 border border-red-500/30 rounded-xl p-4 text-red-200">❌ ${result.error || 'Upload failed'}</div>`;
+                }
+            } catch (error) {
+                uploadMessage.innerHTML = `<div class="bg-red-500/20 border border-red-500/30 rounded-xl p-4 text-red-200">❌ Network error. Please try again.</div>`;
+            }
+            
+            uploadBtn.disabled = false;
+            uploadBtn.textContent = 'Upload and Process Excel File';
+        });
+
+        // Toggle functions for showing all skipped/duplicate names
+        function toggleSkipped() {
+            const more = document.getElementById('skipped-more');
+            const toggle = document.getElementById('skipped-toggle');
+            
+            if (more && toggle) {
+                if (more.style.display === 'none') {
+                    more.style.display = 'inline';
+                    toggle.textContent = 'Show less';
+                } else {
+                    more.style.display = 'none';
+                    const remaining = toggle.textContent.match(/\d+/);
+                    toggle.textContent = 'Show all (' + remaining + ' more)';
+                }
+            }
+        }
+
+        function toggleDuplicates() {
+            const more = document.getElementById('duplicates-more');
+            const toggle = document.getElementById('duplicates-toggle');
+            
+            if (more && toggle) {
+                if (more.style.display === 'none') {
+                    more.style.display = 'inline';
+                    toggle.textContent = 'Show less';
+                } else {
+                    more.style.display = 'none';
+                    const remaining = toggle.textContent.match(/\d+/);
+                    toggle.textContent = 'Show all (' + remaining + ' more)';
+                }
+            }
+        }
+
+        // Initial loads
+        window.addEventListener('load', () => { loadAccounts(); });
+    </script>
+</body>
+</html>

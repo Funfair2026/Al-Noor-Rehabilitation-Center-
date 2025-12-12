@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top-up Instructions - Funfair 2025</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'glow': 'glow 2s ease-in-out infinite alternate',
+                        'slide-up': 'slideUp 0.6s ease-out',
+                        'fade-in': 'fadeIn 0.8s ease-out',
+                        'pulse-slow': 'pulse 3s infinite',
+                        'bounce-slow': 'bounce 3s infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        },
+                        glow: {
+                            '0%': { boxShadow: '0 0 20px rgba(34, 197, 94, 0.5)' },
+                            '100%': { boxShadow: '0 0 40px rgba(34, 197, 94, 0.8)' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(30px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-green-600 via-teal-600 to-blue-600">
+    <!-- Animated Background -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute -top-40 -right-40 w-80 h-80 bg-green-400 opacity-10 rounded-full animate-float"></div>
+        <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-teal-400 opacity-10 rounded-full animate-float" style="animation-delay: 2s;"></div>
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-blue-400 opacity-10 rounded-full animate-pulse-slow"></div>
+    </div>
+
+    <div class="relative z-10 min-h-screen p-4">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-12 animate-fade-in">
+                <div class="inline-block p-4 bg-gradient-to-r from-green-500 to-teal-500 rounded-2xl mb-6 animate-glow">
+                    <span class="text-5xl">💳</span>
+                </div>
+                <h1 class="text-4xl md:text-6xl font-bold text-white mb-4 drop-shadow-2xl">
+                    Top-up Instructions
+                </h1>
+                <p class="text-xl text-white/80 max-w-2xl mx-auto">
+                    Learn how to add money to your QR code balance
+                </p>
+            </div>
+
+            <!-- Instructions Grid -->
+            <div class="grid md:grid-cols-2 gap-8 mb-12">
+                
+                <!-- Step 1 -->
+                <div class="group relative animate-slide-up">
+                    <div class="absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-glow"></div>
+                    <div class="relative bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-8 hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-2 hover:scale-105">
+                        <div class="text-center">
+                            <div class="text-6xl mb-6 animate-bounce-slow">1️⃣</div>
+                            <h3 class="text-2xl font-bold text-white mb-4">Find a Alnoor</h3>
+                            <p class="text-white/80 leading-relaxed">
+                                Look for any Funfair alnoor staff with the "QR Code Top-up" sign. All alnoors can help you add money to your QR code.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="group relative animate-slide-up" style="animation-delay: 0.1s;">
+                    <div class="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-glow"></div>
+                    <div class="relative bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-8 hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-2 hover:scale-105">
+                        <div class="text-center">
+                            <div class="text-6xl mb-6 animate-bounce-slow" style="animation-delay: 0.5s;">2️⃣</div>
+                            <h3 class="text-2xl font-bold text-white mb-4">Provide Details</h3>
+                            <p class="text-white/80 leading-relaxed">
+                                Tell the alnoor staff your name (exactly as it appears on your QR code) and how much you want to add.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="group relative animate-slide-up" style="animation-delay: 0.2s;">
+                    <div class="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-glow"></div>
+                    <div class="relative bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-8 hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-2 hover:scale-105">
+                        <div class="text-center">
+                            <div class="text-6xl mb-6 animate-bounce-slow" style="animation-delay: 1s;">3️⃣</div>
+                            <h3 class="text-2xl font-bold text-white mb-4">Pay by Card</h3>
+                            <p class="text-white/80 leading-relaxed">
+                                Pay using your debit/credit card. The alnoor staff will process your top-up and confirm your new balance.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="group relative animate-slide-up" style="animation-delay: 0.3s;">
+                    <div class="absolute inset-0 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-glow"></div>
+                    <div class="relative bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-8 hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-2 hover:scale-105">
+                        <div class="text-center">
+                            <div class="text-6xl mb-6 animate-bounce-slow" style="animation-delay: 1.5s;">4️⃣</div>
+                            <h3 class="text-2xl font-bold text-white mb-4">Enjoy </h3>
+                            <p class="text-white/80 leading-relaxed">
+                                Your QR code balance is now updated! You can use it at any stall in the funfair.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Important Information -->
+            <div class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-8 mb-8 animate-fade-in" style="animation-delay: 0.4s;">
+                <h3 class="text-2xl font-bold text-white mb-6 text-center">📋 Important Information</h3>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div class="flex items-start space-x-3">
+                            <span class="text-green-400 text-xl">✅</span>
+                            <div>
+                                <h4 class="text-white font-semibold">Minimum Top-up</h4>
+                                <p class="text-white/70 text-sm">AED 10 minimum amount</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <span class="text-green-400 text-xl">✅</span>
+                            <div>
+                                <h4 class="text-white font-semibold">Card Payment Only</h4>
+                                <p class="text-white/70 text-sm">We accept debit and credit cards only</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <span class="text-green-400 text-xl">✅</span>
+                            <div>
+                                <h4 class="text-white font-semibold">Instant Update</h4>
+                                <p class="text-white/70 text-sm">Balance updated immediately</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex items-start space-x-3">
+                            <span class="text-blue-400 text-xl">💡</span>
+                            <div>
+                                <h4 class="text-white font-semibold">Exact Name</h4>
+                                <p class="text-white/70 text-sm">Use the exact name from your QR code</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <span class="text-blue-400 text-xl">💡</span>
+                            <div>
+                                <h4 class="text-white font-semibold">Any Alnoor</h4>
+                                <p class="text-white/70 text-sm">You can top-up at any alnoor</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <span class="text-blue-400 text-xl">💡</span>
+                            <div>
+                                <h4 class="text-white font-semibold">Check Balance</h4>
+                                <p class="text-white/70 text-sm">Always verify your new balance</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Notice -->
+            <div class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-8 mb-8 animate-fade-in" style="animation-delay: 0.6s;">
+                <h3 class="text-2xl font-bold text-white mb-6 text-center">🔐 Security Notice</h3>
+                <div class="text-center text-white/80">
+                    <p class="mb-4">Alnoor staff will authenticate using their confidential PINs.</p>
+                    <p class="text-sm text-white/60">PINs are not displayed for security reasons.</p>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="text-center space-y-4 animate-slide-up" style="animation-delay: 0.8s;">
+                <a 
+                    href="/check-balance" 
+                    class="inline-block w-full md:w-auto bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
+                >
+                    💰 Check My Balance
+                </a>
+                <div class="block md:hidden"></div>
+                <a 
+                    href="/" 
+                    class="inline-block w-full md:w-auto bg-white/10 hover:bg-white/20 backdrop-blur-lg border border-white/20 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 transform hover:scale-105"
+                >
+                    🏠 Back to Home
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating particles -->
+    <div class="fixed inset-0 pointer-events-none overflow-hidden">
+        <div class="absolute top-1/4 left-1/4 w-2 h-2 bg-green-400/30 rounded-full animate-ping" style="animation-delay: 0s;"></div>
+        <div class="absolute top-3/4 left-3/4 w-3 h-3 bg-teal-400/40 rounded-full animate-ping" style="animation-delay: 2s;"></div>
+        <div class="absolute top-1/2 left-1/3 w-1 h-1 bg-blue-400/50 rounded-full animate-ping" style="animation-delay: 4s;"></div>
+        <div class="absolute top-1/3 right-1/4 w-2 h-2 bg-emerald-400/40 rounded-full animate-ping" style="animation-delay: 6s;"></div>
+    </div>
+</body>
+</html>
