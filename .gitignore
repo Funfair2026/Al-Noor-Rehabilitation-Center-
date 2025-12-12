@@ -1,3 +1,34 @@
+<<<<<<< HEAD
 *.db
 *.db-journal
 __pycache__/
+=======
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+env/
+venv/
+.venv/
+.cache/
+
+# Flask
+instance/
+*.sqlite
+*.db
+*.sql
+
+# Logs
+*.log
+
+# Backup files
+*.bak
+*.zip
+*.tar
+*.gz
+
+# System files
+.DS_Store
+Thumbs.db
+>>>>>>> cd23e50fddc65eb92ec656705c0a4ea9e19583fb
