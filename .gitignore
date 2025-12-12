@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+env/
+venv/
+.venv/
+.cache/
+
+# Flask
+instance/
+*.sqlite
+*.db
+*.sql
+
+# Logs
+*.log
+
+# Backup files
+*.bak
+*.zip
+*.tar
+*.gz
+
+# System files
+.DS_Store
+Thumbs.db
