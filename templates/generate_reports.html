@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Reports - Funfair 2025</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4">
+    <script>
+        // Token validation
+        function validateToken() {
+            const token = localStorage.getItem('admin_token');
+            if (!token) {
+                window.location.href = '/admin_login';
+                return false;
+            }
+            
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                const now = Math.floor(Date.now() / 1000);
+                if (payload.exp < now) {
+                    localStorage.removeItem('admin_token');
+                    window.location.href = '/admin_login';
+                    return false;
+                }
+            } catch (e) {
+                localStorage.removeItem('admin_token');
+                window.location.href = '/admin_login';
+                return false;
+            }
+            
+            return true;
+        }
+
+        // Check token on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!validateToken()) {
+                return;
+            }
+        });
+    </script>
+    <div class="max-w-4xl mx-auto">
+        <div class="text-center mb-10">
+            <div class="inline-block p-4 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl mb-4">
+                <span class="text-5xl"></span>
+            </div>
+            <h1 class="text-4xl font-bold text-white">Generate Reports</h1>
+            <p class="text-white/70 mt-2">Download comprehensive Excel report with all user data</p>
+        </div>
+
+        <div class="mb-6 text-center">
+            <a href="/admin" class="inline-flex items-center bg-white/10 hover:bg-white/20 backdrop-blur-lg border border-white/20 text-white px-6 py-3 rounded-xl">
+                ← Back to Admin Portal
+            </a>
+        </div>
+
+        <div class="max-w-2xl mx-auto mb-8">
+            <div class="relative bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-8 hover:bg-white/20 transition">
+                <div class="text-center">
+                    <div class="text-5xl mb-6">📊</div>
+                    <h3 class="text-2xl font-semibold text-white mb-3">Comprehensive User Report</h3>
+                    <p class="text-white/70 mb-6">Download a complete Excel file with all user data including visitors, transactions, admins, and system logs</p>
+                    <button id="downloadBtn" class="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white font-bold py-4 px-6 rounded-xl text-lg transition-all duration-300 transform hover:scale-105">
+                        Download Excel Report
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="loading" class="hidden text-center text-white/80 mb-4">Generating report... Please wait.</div>
+
+        <div class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 text-white/80">
+            <h3 class="text-xl font-bold text-white mb-4">Report Contents</h3>
+            <p class="text-white mb-4">The Excel file contains the following sheets with comprehensive user data:</p>
+            <ul class="list-disc ml-6 space-y-2">
+                <li><span class="text-white font-semibold">Visitors:</span> All visitor QR codes with ticket ID, name, amounts, balance, issue date, and issued by admin</li>
+                <li><span class="text-white font-semibold">Revenue Transactions:</span> All Issue and Top-up transactions with visitor name, amount, type, admin, and date</li>
+                <li><span class="text-white font-semibold">Counter Transactions:</span> All payment transactions with counter name, amount, staff, customer, and time</li>
+                <li><span class="text-white font-semibold">Admin Users:</span> All admin accounts with username, role, last login, created date, status, and created by</li>
+                <li><span class="text-white font-semibold">System Logs:</span> Complete audit trail with user type, user ID, action, details, IP address, and timestamp</li>
+                <li><span class="text-white font-semibold">Summary:</span> Overview statistics including total visitors, amounts issued/top-up, payments, and admin count</li>
+            </ul>
+            <p class="mt-4 text-sm text-white/60">The report is downloaded as a single Excel (.xlsx) file with multiple sheets.</p>
+        </div>
+    </div>
+
+    <script>
+        async function generateReport() {
+            const btn = document.getElementById('downloadBtn');
+            const loading = document.getElementById('loading');
+            btn.disabled = true;
+            btn.textContent = 'Generating...';
+            loading.classList.remove('hidden');
+            
+            try {
+                const response = await fetch('/generate_comprehensive_report', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const downloadUrl = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = downloadUrl;
+                    a.download = 'comprehensive_user_report.xlsx';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(downloadUrl);
+                    document.body.removeChild(a);
+                } else {
+                    const result = await response.json();
+                    alert('Error: ' + (result.error || 'Failed to generate report'));
+                }
+            } catch (error) {
+                alert('Network error. Please try again.');
+            }
+            
+            btn.disabled = false;
+            btn.textContent = 'Download Excel Report';
+            loading.classList.add('hidden');
+        }
+        document.getElementById('downloadBtn').addEventListener('click', generateReport);
+    </script>
+</body>
+</html>

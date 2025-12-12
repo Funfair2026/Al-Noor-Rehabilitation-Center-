@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check Balance - Funfair 2025</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'glow': 'glow 2s ease-in-out infinite alternate',
+                        'slide-up': 'slideUp 0.6s ease-out',
+                        'fade-in': 'fadeIn 0.8s ease-out',
+                        'pulse-slow': 'pulse 3s infinite',
+                        'bounce-slow': 'bounce 3s infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        },
+                        glow: {
+                            '0%': { boxShadow: '0 0 20px rgba(59, 130, 246, 0.5)' },
+                            '100%': { boxShadow: '0 0 40px rgba(59, 130, 246, 0.8)' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(30px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600">
+    <!-- Animated Background -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute -top-40 -right-40 w-80 h-80 bg-blue-400 opacity-10 rounded-full animate-float"></div>
+        <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-400 opacity-10 rounded-full animate-float" style="animation-delay: 2s;"></div>
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-pink-400 opacity-10 rounded-full animate-pulse-slow"></div>
+    </div>
+
+    <div class="relative z-10 min-h-screen flex items-center justify-center p-4">
+        <div class="w-full max-w-2xl">
+            <!-- Header -->
+            <div class="text-center mb-8 animate-fade-in">
+                <div class="inline-block p-4 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl mb-6 animate-glow">
+                    <span class="text-5xl"></span>
+                </div>
+                <h1 class="text-4xl md:text-5xl font-bold text-white mb-4 drop-shadow-2xl">
+                    Check Balance
+                </h1>
+                <p class="text-lg text-white/80">
+                    Check your QR code balance instantly
+                </p>
+            </div>
+
+            <!-- Form Card -->
+            <div class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 shadow-2xl animate-slide-up">
+                <form id="balanceForm" class="space-y-6">
+                    <!-- QR Code Scanner -->
+                    <div>
+                        <label class="block text-sm font-semibold text-white/90 mb-3">
+                            Scan Your QR Code (Optional)
+                        </label>
+                        <div class="relative">
+                            <div id="scanner-container" class="w-full h-64 bg-white/10 border border-white/20 rounded-xl flex items-center justify-center">
+                                <div id="scanner-placeholder" class="text-center text-white/70">
+                                    <div class="text-4xl mb-2">📱</div>
+                                    <p>Click to start camera scanner</p>
+                                </div>
+                                <video id="scanner-video" class="w-full h-full object-cover rounded-xl hidden"></video>
+                                <canvas id="scanner-canvas" class="hidden"></canvas>
+                            </div>
+                            
+                            <!-- File Drop Zone -->
+                            <div id="file-drop-zone" class="w-full h-64 bg-white/5 border-2 border-dashed border-white/30 rounded-xl flex items-center justify-center cursor-pointer hover:bg-white/10 transition-all duration-300 hidden">
+                                <div id="drop-zone-placeholder" class="text-center text-white/70">
+                                    <div class="text-4xl mb-2">📁</div>
+                                    <p>Drop QR code image here</p>
+                                    <p class="text-sm mt-1">or click to browse</p>
+                                </div>
+                                <div id="uploaded-image-preview" class="hidden w-full h-full relative">
+                                    <img id="preview-img" class="w-full h-full object-contain rounded-xl" alt="Uploaded QR Code">
+                                    <div class="absolute top-2 right-2 bg-black/50 text-white px-2 py-1 rounded text-xs">
+                                        Uploaded
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <input type="file" id="qr-file-input" accept="image/*" class="hidden">
+                            
+                            <div class="mt-3 flex gap-2">
+                                <button 
+                                    type="button" 
+                                    id="startScannerBtn"
+                                    class="flex-1 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105"
+                                >
+                                    📷 Camera Scanner
+                                </button>
+                                <button 
+                                    type="button" 
+                                    id="fileUploadBtn"
+                                    class="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105"
+                                >
+                                    📁 Upload File
+                                </button>
+                            </div>
+                            <button 
+                                type="button" 
+                                id="stopScannerBtn"
+                                class="mt-3 w-full bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hidden"
+                            >
+                                Stop Scanner
+                            </button>
+                        </div>
+                        <p class="text-white/60 text-sm mt-2">Scan your QR code or upload an image to automatically fill your ticket ID</p>
+                    </div>
+
+                    <!-- Manual Entry -->
+                    <div>
+                        <label for="ticket_id" class="block text-sm font-semibold text-white/90 mb-3">
+                            Or Enter Your Name/Ticket ID Manually
+                        </label>
+                        <div class="relative">
+                            <input 
+                                type="text" 
+                                id="ticket_id" 
+                                name="ticket_id" 
+                                placeholder="Enter your name or ticket ID"
+                                class="w-full px-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-lg"
+                            >
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                                <span class="text-white/50 text-xl">🔍</span>
+                            </div>
+                        </div>
+                        <p class="text-white/60 text-sm mt-2">Use the same name you used when getting your QR code</p>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button 
+                        type="submit" 
+                        id="submitBtn"
+                        class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-500/50 text-lg"
+                    >
+                        <span id="submitBtnText">Check Balance</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Message Display -->
+            <div id="message" class="mt-6"></div>
+
+            <!-- Balance Display -->
+            <div id="balanceDisplay" class="mt-6"></div>
+
+            <!-- Back Button -->
+            <div class="mt-8 text-center animate-slide-up" style="animation-delay: 0.4s;">
+                <a 
+                    href="/" 
+                    class="inline-flex items-center bg-white/10 hover:bg-white/20 backdrop-blur-lg border border-white/20 text-white px-6 py-3 rounded-xl transition-all duration-300 transform hover:scale-105"
+                >
+                    <span class="mr-2"></span>
+                    Back to Home
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating particles -->
+    <div class="fixed inset-0 pointer-events-none overflow-hidden">
+        <div class="absolute top-1/4 left-1/4 w-2 h-2 bg-blue-400/30 rounded-full animate-ping" style="animation-delay: 0s;"></div>
+        <div class="absolute top-3/4 left-3/4 w-3 h-3 bg-purple-400/40 rounded-full animate-ping" style="animation-delay: 2s;"></div>
+        <div class="absolute top-1/2 left-1/3 w-1 h-1 bg-pink-400/50 rounded-full animate-ping" style="animation-delay: 4s;"></div>
+        <div class="absolute top-1/3 right-1/4 w-2 h-2 bg-indigo-400/40 rounded-full animate-ping" style="animation-delay: 6s;"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <script>
+        let scannerActive = false;
+        let stream = null;
+        let qrCodeDetected = false; // Flag to prevent image reset after successful QR detection
+
+        // QR Scanner functionality
+        document.getElementById('startScannerBtn').addEventListener('click', function() {
+            startQRScanner();
+        });
+
+        document.getElementById('stopScannerBtn').addEventListener('click', function() {
+            stopQRScanner();
+        });
+
+        // File upload functionality
+        document.getElementById('fileUploadBtn').addEventListener('click', function() {
+            toggleFileUpload();
+        });
+
+        document.getElementById('qr-file-input').addEventListener('change', function(e) {
+            handleFileUpload(e.target.files[0]);
+        });
+
+        // File drop zone functionality
+        const fileDropZone = document.getElementById('file-drop-zone');
+        
+        fileDropZone.addEventListener('click', function() {
+            document.getElementById('qr-file-input').click();
+        });
+
+        fileDropZone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            fileDropZone.classList.add('bg-white/15');
+        });
+
+        fileDropZone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            fileDropZone.classList.remove('bg-white/15');
+        });
+
+        fileDropZone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            fileDropZone.classList.remove('bg-white/15');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileUpload(files[0]);
+            }
+        });
+
+        function toggleFileUpload() {
+            const scannerContainer = document.getElementById('scanner-container');
+            const fileDropZone = document.getElementById('file-drop-zone');
+            const startBtn = document.getElementById('startScannerBtn');
+            const fileBtn = document.getElementById('fileUploadBtn');
+            
+            if (fileDropZone.classList.contains('hidden')) {
+                // Show file upload
+                scannerContainer.classList.add('hidden');
+                fileDropZone.classList.remove('hidden');
+                startBtn.textContent = '📷 Camera Scanner';
+                fileBtn.textContent = '📁 Upload File';
+                console.log('Switched to file upload mode');
+            } else {
+                // Show camera scanner
+                scannerContainer.classList.remove('hidden');
+                fileDropZone.classList.add('hidden');
+                startBtn.textContent = '📷 Camera Scanner';
+                fileBtn.textContent = '📁 Upload File';
+                // Only reset file upload when switching to camera (not when QR is detected)
+                console.log('Switched to camera mode, resetting file upload');
+                resetFileUpload();
+            }
+        }
+
+        function handleFileUpload(file) {
+            console.log('File uploaded:', file.name, file.type);
+            
+            if (!file || !file.type.startsWith('image/')) {
+                alert('Please select a valid image file.');
+                return;
+            }
+
+            // Show image preview
+            const dropZonePlaceholder = document.getElementById('drop-zone-placeholder');
+            const uploadedImagePreview = document.getElementById('uploaded-image-preview');
+            const previewImg = document.getElementById('preview-img');
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                console.log('File read successfully, processing image...');
+                
+                // Show the uploaded image
+                previewImg.src = e.target.result;
+                dropZonePlaceholder.classList.add('hidden');
+                uploadedImagePreview.classList.remove('hidden');
+                
+                const img = new Image();
+                img.onload = function() {
+                    console.log('Image loaded, dimensions:', img.width, 'x', img.height);
+                    
+                    // Create canvas to process the image
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    
+                    // Get image data for QR detection
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    console.log('Image data extracted, attempting QR detection...');
+                    
+                    // Detect QR code
+                    if (typeof jsQR !== 'undefined') {
+                        console.log('jsQR library is available, detecting QR code...');
+                        const code = jsQR(imageData.data, imageData.width, imageData.height);
+                        if (code) {
+                            console.log('QR code detected successfully:', code.data);
+                            handleQRCodeDetected(code.data);
+                        } else {
+                            console.log('No QR code found in the image');
+                            alert('No QR code found in the image. Please try a different image.');
+                            // Reset to placeholder if no QR code found
+                            resetFileUpload();
+                        }
+                    } else {
+                        console.error('jsQR library not loaded');
+                        alert('QR code detection library not loaded. Please try again.');
+                        resetFileUpload();
+                    }
+                };
+                img.onerror = function() {
+                    console.error('Error loading image');
+                    alert('Error loading image. Please try a different file.');
+                    resetFileUpload();
+                };
+                img.src = e.target.result;
+            };
+            reader.onerror = function() {
+                console.error('Error reading file');
+                alert('Error reading file. Please try again.');
+                resetFileUpload();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function resetFileUpload() {
+            // Don't reset if QR code was successfully detected
+            if (qrCodeDetected) {
+                console.log('Skipping file upload reset - QR code was detected');
+                return;
+            }
+            
+            const dropZonePlaceholder = document.getElementById('drop-zone-placeholder');
+            const uploadedImagePreview = document.getElementById('uploaded-image-preview');
+            
+            dropZonePlaceholder.classList.remove('hidden');
+            uploadedImagePreview.classList.add('hidden');
+            document.getElementById('qr-file-input').value = '';
+            console.log('File upload reset');
+        }
+
+        function startQRScanner() {
+            const scannerContainer = document.getElementById('scanner-container');
+            const scannerPlaceholder = document.getElementById('scanner-placeholder');
+            const scannerVideo = document.getElementById('scanner-video');
+            const fileDropZone = document.getElementById('file-drop-zone');
+            const startBtn = document.getElementById('startScannerBtn');
+            const stopBtn = document.getElementById('stopScannerBtn');
+
+            // Hide file drop zone and show camera scanner
+            fileDropZone.classList.add('hidden');
+            scannerContainer.classList.remove('hidden');
+
+            navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    facingMode: 'environment',
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                } 
+            })
+            .then(function(mediaStream) {
+                stream = mediaStream;
+                scannerVideo.srcObject = mediaStream;
+                scannerVideo.play();
+                
+                scannerPlaceholder.classList.add('hidden');
+                scannerVideo.classList.remove('hidden');
+                startBtn.classList.add('hidden');
+                stopBtn.classList.remove('hidden');
+                
+                scannerActive = true;
+                
+                // Start QR code detection
+                startQRDetection();
+            })
+            .catch(function(err) {
+                console.error('Error accessing camera:', err);
+                alert('Unable to access camera. Please ensure camera permissions are granted.');
+            });
+        }
+
+        function stopQRScanner() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            
+            const scannerContainer = document.getElementById('scanner-container');
+            const scannerPlaceholder = document.getElementById('scanner-placeholder');
+            const scannerVideo = document.getElementById('scanner-video');
+            const startBtn = document.getElementById('startScannerBtn');
+            const stopBtn = document.getElementById('stopScannerBtn');
+
+            scannerVideo.classList.add('hidden');
+            scannerPlaceholder.classList.remove('hidden');
+            startBtn.classList.remove('hidden');
+            stopBtn.classList.add('hidden');
+            
+            scannerActive = false;
+        }
+
+        function startQRDetection() {
+            const scannerVideo = document.getElementById('scanner-video');
+            const canvas = document.getElementById('scanner-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = scannerVideo.videoWidth;
+            canvas.height = scannerVideo.videoHeight;
+            
+            function detectQR() {
+                if (!scannerActive) return;
+                
+                ctx.drawImage(scannerVideo, 0, 0, canvas.width, canvas.height);
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                
+                // Simple QR detection using jsQR library
+                if (typeof jsQR !== 'undefined') {
+                    const code = jsQR(imageData.data, imageData.width, imageData.height);
+                    if (code) {
+                        handleQRCodeDetected(code.data);
+                        return;
+                    }
+                }
+                
+                requestAnimationFrame(detectQR);
+            }
+            
+            detectQR();
+        }
+
+        function handleQRCodeDetected(qrData) {
+            console.log('QR Code detected:', qrData);
+            
+            let ticketId = null;
+            
+            // Try different methods to extract ticket ID
+            if (qrData.includes('ticket_id=')) {
+                // Method 1: Standard URL parameter format
+                ticketId = qrData.split('ticket_id=')[1].split('&')[0];
+            } else if (qrData.includes('/authenticator?ticket_id=')) {
+                // Method 2: Full URL format
+                ticketId = qrData.split('/authenticator?ticket_id=')[1].split('&')[0];
+            } else if (qrData.match(/ticket_id[=:]\s*(\d+)/)) {
+                // Method 3: Regex pattern for various formats
+                const match = qrData.match(/ticket_id[=:]\s*(\d+)/);
+                ticketId = match[1];
+            } else if (/^\d+$/.test(qrData.trim())) {
+                // Method 4: If the QR code contains only a number, assume it's the ticket ID
+                ticketId = qrData.trim();
+            }
+            
+            if (ticketId) {
+                console.log('Extracted ticket ID:', ticketId);
+                
+                // Set flag to prevent image reset
+                qrCodeDetected = true;
+                
+                // Auto-fill the form and check balance
+                document.getElementById('ticket_id').value = ticketId;
+                
+                // Show success message
+                const messageDiv = document.getElementById('message');
+                messageDiv.innerHTML = `
+                    <div class="bg-green-500/20 backdrop-blur-lg border border-green-500/30 rounded-2xl p-4 animate-fade-in">
+                        <div class="flex items-center text-green-200">
+                            <span class="text-xl mr-3">✓</span>
+                            <div>
+                                <h3 class="text-sm font-bold">QR Code Scanned Successfully</h3>
+                                <p class="text-xs opacity-90">Ticket ID: ${ticketId}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Stop scanner but keep the uploaded image visible
+                stopQRScanner();
+                
+                // Don't reset the file upload - keep the image visible
+                console.log('Auto-submitting form with ticket ID:', ticketId);
+                
+                // Manually trigger the form submission handler instead of using form.submit()
+                const form = document.getElementById('balanceForm');
+                const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+                form.dispatchEvent(submitEvent);
+            } else {
+                alert('Invalid QR code format. Could not extract ticket ID.\n\nQR Code content: ' + qrData);
+                console.log('Invalid QR code format:', qrData);
+            }
+        }
+
+        document.getElementById('balanceForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            console.log('Form submission triggered');
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const submitBtnText = document.getElementById('submitBtnText');
+            const messageDiv = document.getElementById('message');
+            const balanceDisplay = document.getElementById('balanceDisplay');
+            
+            // Disable button and show loading
+            submitBtn.disabled = true;
+            submitBtnText.innerHTML = 'Checking...';
+            submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+            
+            const ticketId = document.getElementById('ticket_id').value;
+            console.log('Checking balance for ticket ID:', ticketId);
+            
+            try {
+                console.log('Sending request to /check-balance');
+                const response = await fetch('/check-balance', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ ticket_id: ticketId })
+                });
+                
+                console.log('Response status:', response.status);
+                const result = await response.json();
+                console.log('Response data:', result);
+                
+                if (response.ok) {
+                    // Show success message
+                    messageDiv.innerHTML = `
+                        <div class="bg-green-500/20 backdrop-blur-lg border border-green-500/30 rounded-2xl p-6 animate-fade-in">
+                            <div class="flex items-center justify-center text-green-200">
+                                <span class="text-2xl mr-3">✓</span>
+                                <div>
+                                    <h3 class="text-lg font-bold">Balance Found</h3>
+                                    <p class="text-sm opacity-90">QR code balance retrieved successfully!</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Format issue date in UAE timezone
+                    let formattedIssueDate = 'N/A';
+                    if (result.issue_date) {
+                        const date = new Date(result.issue_date);
+                        formattedIssueDate = date.toLocaleString('en-US', {
+                            timeZone: 'Asia/Dubai',
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: true
+                        });
+                    }
+                    
+                    // Display balance details
+                    balanceDisplay.innerHTML = `
+                        <div class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-8 text-center animate-slide-up">
+                            <h3 class="text-xl font-bold text-white mb-6">Your Balance</h3>
+                            <div class="space-y-4">
+                                <div class="bg-white/20 rounded-xl p-6">
+                                    <div class="text-white/80 text-sm mb-2">Visitor Name</div>
+                                <div class="text-white font-bold text-xl">${result.full_name}</div>
+                                </div>
+                                <div class="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 rounded-xl p-6">
+                                    <div class="text-white/80 text-sm mb-2">Current Balance</div>
+                                    <div class="text-green-400 font-bold text-3xl">AED ${result.balance}</div>
+                                </div>
+                                <div class="bg-white/20 rounded-xl p-4">
+                                    <div class="text-white/80 text-sm mb-2">Ticket ID</div>
+                                    <div class="text-blue-400 font-bold text-lg">${result.ticket_id}</div>
+                                </div>
+                                <div class="bg-white/20 rounded-xl p-4">
+                                    <div class="text-white/80 text-sm mb-2">Issued Date</div>
+                                    <div class="text-white font-semibold">${formattedIssueDate}</div>
+                                </div>
+                            </div>
+                            <div class="mt-6 space-y-3">
+                                <a href="/topup-instructions" class="block w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105">
+                                    Top-up Instructions
+                                </a>
+                                <button onclick="document.getElementById('balanceForm').reset(); document.getElementById('message').innerHTML=''; document.getElementById('balanceDisplay').innerHTML=''; qrCodeDetected = false; resetFileUpload();" class="w-full bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105">
+                                    Check Another Balance
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Show error message
+                    messageDiv.innerHTML = `
+                        <div class="bg-red-500/20 backdrop-blur-lg border border-red-500/30 rounded-2xl p-6 animate-fade-in">
+                            <div class="flex items-center justify-center text-red-200">
+                                <span class="text-2xl mr-3">❌</span>
+                                <div>
+                                    <h3 class="text-lg font-bold">Error</h3>
+                                    <p class="text-sm opacity-90">${result.error}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    balanceDisplay.innerHTML = '';
+                    
+                    // Auto-hide error message
+                    setTimeout(() => {
+                        messageDiv.innerHTML = '';
+                    }, 5000);
+                }
+            } catch (error) {
+                console.error('Error during balance check:', error);
+                messageDiv.innerHTML = `
+                    <div class="bg-red-500/20 backdrop-blur-lg border border-red-500/30 rounded-2xl p-6 animate-fade-in">
+                        <div class="flex items-center justify-center text-red-200">
+                            <span class="text-2xl mr-3">❌</span>
+                            <div>
+                                <h3 class="text-lg font-bold">Network Error</h3>
+                                <p class="text-sm opacity-90">Please try again.</p>
+                                <p class="text-xs opacity-70 mt-1">Error: ${error.message}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                balanceDisplay.innerHTML = '';
+                
+                setTimeout(() => {
+                    messageDiv.innerHTML = '';
+                }, 5000);
+            }
+            
+            // Re-enable button
+            submitBtn.disabled = false;
+            submitBtnText.innerHTML = '🔍 Check Balance';
+            submitBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+        });
+    </script>
+</body>
+</html>
