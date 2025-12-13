@@ -545,7 +545,7 @@ def admin_login():
                 'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=expiration_hours)
             }, SECRET_KEY, algorithm='HS256')
             
-            session['admin_token'] = token
+            #session['admin_token'] = token
             
             # Enhanced logging for super admin logins
             if user['role'] == 'super_admin':
@@ -1503,18 +1503,20 @@ def admin_login_page():
 @app.route('/admin')
 def admin():
     # Check if admin is logged in
-    token = session.get('admin_token')
-    if not token:
-        return redirect('/admin_login')
+    # token = session.get('admin_token')
+    # if not token:
+    #     return redirect('/admin_login')
     
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
-        if payload.get('role') not in ['admin', 'super_admin']:
-            return redirect('/admin_login')
-    except:
-        return redirect('/admin_login')
+    # try:
+    #     payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+    #     if payload.get('role') not in ['admin', 'super_admin']:
+    #         return redirect('/admin_login')
+    # except:
+    #     return redirect('/admin_login')
     
     return render_template('admin.html')
+
+    
 
 @app.route('/live_dashboard')
 @require_admin_page_auth
