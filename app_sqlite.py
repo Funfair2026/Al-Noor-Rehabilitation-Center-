@@ -1502,6 +1502,7 @@ def admin_login_page():
 
 @app.route('/admin')
 def admin():
+    print("CREATE ADMIN ROUTE HIT")
     # Check if admin is logged in
     # token = session.get('admin_token')
     # if not token:
@@ -2177,6 +2178,7 @@ def list_admin_users():
 @app.route('/api/admin/create_admin', methods=['POST'])
 @require_super_admin_auth
 def create_admin():
+    print("CREATE ADMIN ROUTE HIT")
     """Create new admin account (super admin only)"""
     # Get current admin username from token
     token = request.headers.get('Authorization', '').replace('Bearer ', '')
