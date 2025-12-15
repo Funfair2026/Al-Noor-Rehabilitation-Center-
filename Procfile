@@ -1,1 +1,1 @@
-web:gunicorn app_sqlite:app
+web: gunicorn app_sqlite:app
