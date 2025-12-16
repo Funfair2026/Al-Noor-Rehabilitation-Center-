@@ -738,20 +738,6 @@ def scan_for_payment():
         cursor.close()
         conn.close()
 
-# Print QR route
-@app.route('/print_qr')
-def print_qr():
-    visitor_name = request.args.get('visitor_name')
-    balance = request.args.get('balance')
-    issue_date = request.args.get('issue_date')
-    qr_image = request.args.get('qr_image')
-    
-    return render_template('print_qr.html', 
-                         visitor_name=visitor_name,
-                         balance=balance,
-                         issue_date=issue_date,
-                         qr_image=qr_image)
-
 # Live dashboard data
 @app.route('/api/dashboard_data')
 @require_admin_auth
