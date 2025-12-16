@@ -862,6 +862,29 @@ def issue_coupon_route():
         #"print_url": f"/print_qr?visitor_name={full_name}&ticket_id={ticket_id}&balance={amount}&issue_date={datetime.now().strftime('%Y-%m-%d')}&qr_image={qr_code_img_str}"
     })
 
+@app.route('/print_qr/<int:ticket_id>')
+@require_admin_auth
+def print_qr(ticket_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT full_name, qr_code FROM coupons WHERE ticket_id = ?",
+        (ticket_id,)
+    )
+    row = cursor.fetchone()
+    conn.close()
+
+    if not row:
+        return "Invalid Ticket", 404
+
+    return render_template(
+        "print_qr.html",
+        full_name=row["full_name"],
+        ticket_id=ticket_id,
+        qr_code=row["qr_code"]
+    )
+
 @app.route('/topup_coupon', methods=['POST'])
 @require_admin_auth
 def topup_coupon():
