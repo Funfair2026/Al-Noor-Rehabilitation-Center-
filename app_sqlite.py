@@ -15,15 +15,13 @@ import matplotlib
 matplotlib.use('Agg')  # Use non-interactive backend to prevent GUI crashes
 import matplotlib.pyplot as plt
 import hashlib
-from datetime import datetime
+from datetime import datetime, timedelta
 import jwt
 import secrets
 import bcrypt
 import re
 from dotenv import load_dotenv
-from flask import request
-from datetime import datetime
-from flask import request
+
 
 # Load environment variables
 load_dotenv()
@@ -389,7 +387,7 @@ def log_activity(user_type, user_id, action, details="", ip_address=None):
     # Enhanced logging for super admin actions
     if user_type == 'super_admin':
         # Add timestamp and additional context
-        timestamp = datetime.datetime.utcnow().isoformat()
+        timestamp = datetime.utcnow().isoformat()
         enhanced_details = f"[{timestamp}] {details}"
         if not ip_address:
             ip_address = request.remote_addr
@@ -441,8 +439,8 @@ def require_admin_auth(f):
                 
                 # Check if account is locked
                 if user['locked_until']:
-                    locked_until = datetime.datetime.fromisoformat(user['locked_until'])
-                    if datetime.datetime.utcnow() < locked_until:
+                    locked_until = datetime.fromisoformat(user['locked_until'])
+                    if datetime.utcnow() < locked_until:
                         return jsonify({"error": "Account is locked"}), 403
                 
             finally:
@@ -489,8 +487,8 @@ def require_super_admin_auth(f):
                     return jsonify({"error": "Account is disabled"}), 403
                 
                 if user['locked_until']:
-                    locked_until = datetime.datetime.fromisoformat(user['locked_until'])
-                    if datetime.datetime.utcnow() < locked_until:
+                    locked_until = datetime.fromisoformat(user['locked_until'])
+                    if datetime.utcnow() < locked_until:
                         return jsonify({"error": "Account is locked"}), 403
                         
             finally:
@@ -550,9 +548,9 @@ def admin_login():
             
             # Check if account is locked
             if user['locked_until']:
-                locked_until = datetime.datetime.fromisoformat(user['locked_until'])
-                if datetime.datetime.utcnow() < locked_until:
-                    remaining = (locked_until - datetime.datetime.utcnow()).total_seconds() / 60
+                locked_until = datetime.fromisoformat(user['locked_until'])
+                if datetime.utcnow() < locked_until:
+                    remaining = (locked_until - datetime.utcnow()).total_seconds() / 60
                     log_activity('admin', username, 'login_failed', f'Failed login attempt - account locked for {remaining:.0f} more minutes')
                     return jsonify({"error": f"Account is locked. Try again in {int(remaining)} minutes."}), 403
                 else:
@@ -570,7 +568,7 @@ def admin_login():
                 # Longer lockout for super admin (60 minutes) vs regular admin (30 minutes)
                 lockout_minutes = 60 if user['role'] == 'super_admin' else 30
                 if failed_attempts >= 5:
-                    locked_until = (datetime.datetime.utcnow() + datetime.timedelta(minutes=lockout_minutes)).isoformat()
+                    locked_until = (datetime.utcnow() + datetime.timedelta(minutes=lockout_minutes)).isoformat()
                     cursor.execute("UPDATE admin_users SET failed_login_attempts = ?, locked_until = ? WHERE username = ?", 
                                  (failed_attempts, locked_until, username))
                     if user['role'] == 'super_admin':
@@ -589,7 +587,7 @@ def admin_login():
             
             # Successful login - reset failed attempts and update last_login
             cursor.execute("UPDATE admin_users SET failed_login_attempts = 0, locked_until = NULL, last_login = ? WHERE username = ?", 
-                         (datetime.datetime.utcnow().isoformat(), username))
+                         (datetime.utcnow().isoformat(), username))
             conn.commit()
             
             # Create JWT token with role from database
@@ -599,7 +597,7 @@ def admin_login():
                 'username': username,
                 'user_id': user['id'],
                 'role': user['role'],
-                'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=expiration_hours)
+                'exp': datetime.utcnow() + timedelta(hours=expiration_hours)
             }, SECRET_KEY, algorithm='HS256')
             
             #session['admin_token'] = token
@@ -859,7 +857,7 @@ def issue_coupon_route():
     return jsonify({
         "message": "Coupon issued successfully",
         "qr_code_img_str": qr_code_img_str,
-        "print_url": f"/print_qr?visitor_name={full_name}&ticket_id={ticket_id}&balance={amount}&issue_date={datetime.datetime.now().strftime('%Y-%m-%d')}&qr_image={qr_code_img_str}"
+        "print_url": f"/print_qr?visitor_name={full_name}&ticket_id={ticket_id}&balance={amount}&issue_date={datetime.now().strftime('%Y-%m-%d')}&qr_image={qr_code_img_str}"
     })
 
 @app.route('/topup_coupon', methods=['POST'])
