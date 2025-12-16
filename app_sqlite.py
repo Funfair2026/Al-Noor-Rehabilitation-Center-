@@ -15,7 +15,7 @@ import matplotlib
 matplotlib.use('Agg')  # Use non-interactive backend to prevent GUI crashes
 import matplotlib.pyplot as plt
 import hashlib
-import datetime
+from datetime import datetime
 import jwt
 import secrets
 import bcrypt
