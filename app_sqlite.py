@@ -22,6 +22,8 @@ import bcrypt
 import re
 from dotenv import load_dotenv
 from flask import request
+from datetime import datetime
+from flask import request
 
 # Load environment variables
 load_dotenv()
@@ -130,9 +132,19 @@ def create_table_if_not_exists():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     '''
+    #Create visitor_logs table
+    create_visitor_logs_table_query = '''
+    CREATE TABLE IF NOT EXISTS visitor_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ticket_id TEXT NOT NULL,
+        full_name TEXT NOT NULL,
+        balance REAL,
+        scanned_at TEXT,
+        ip_address TEXT
+    );
+    '''
 
-
-    # Create system_logs table
+    #Create system_logs table
     create_system_logs_table_query = '''
     CREATE TABLE IF NOT EXISTS system_logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -197,6 +209,24 @@ def apply_schema_upgrades():
     finally:
         cursor.close()
         conn.close()
+
+def create_session_log_table():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS session_log_table (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id TEXT NOT NULL,
+            username TEXT,
+            role TEXT,
+            action TEXT,
+            ip_address TEXT,
+            user_agent TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """)
+    conn.commit()
+    conn.close()
 
 # Password security functions
 def hash_password(password):
@@ -928,32 +958,109 @@ def check_balance_page():
             cursor.close()
             conn.close()
 
-    # Default: render HTML form flow
-    balance = None
-    error_message = None
-    if request.method == 'POST':
-        full_name = request.form.get('full_name') or request.form.get('ticket_id')
-        if not full_name:
-            error_message = "Name is required."
+         # Default: render HTML form flow
+        
+
+        balance = None
+        error_message = None
+
+    if request.method == "POST":
+        ticket_id = request.form.get("ticket_id", "").strip()
+        full_name = request.form.get("full_name", "").strip()
+
+        # ✅ CLEAN validation (no guessing)
+        if not ticket_id and not full_name:
+            error_message = "Ticket ID or Name is required."
+
         else:
+            conn = None
+            cursor = None
             try:
                 conn = get_db_connection()
                 cursor = conn.cursor()
-                if str(full_name).isdigit():
-                    cursor.execute("SELECT balance FROM coupons WHERE ticket_id = ?", (full_name,))
+
+                # ✅ Explicit logic (production-safe)
+                if ticket_id:
+                    cursor.execute(
+                        "SELECT ticket_id, full_name, balance FROM coupons WHERE ticket_id = ?",
+                        (ticket_id,)
+                    )
                 else:
-                    cursor.execute("SELECT balance FROM coupons WHERE full_name = ?", (full_name,))
-                result = cursor.fetchone()
-                if result:
-                    balance = result[0]
+                    cursor.execute(
+                        "SELECT ticket_id, full_name, balance FROM coupons WHERE full_name = ?",
+                        (full_name,)
+                    )
+
+                row = cursor.fetchone()
+
+                if not row:
+                    error_message = "Visitor not found."
                 else:
-                    error_message = "Coupon not found."
-            except sqlite3.Error:
-                error_message = "Database connection error."
+                    ticket_id = row["ticket_id"]
+                    full_name = row["full_name"]
+                    balance = row["balance"]
+
+                # ✅ SAVE visitor scan/check to DB (THIS WAS MISSING)
+
+                
+                cursor.execute("""
+                    INSERT INTO visitor_logs (
+                        ticket_id,
+                        full_name,
+                        balance,
+                        scanned_at,
+                        ip_address
+                    ) VALUES (?, ?, ?, ?, ?)
+                """, (
+                    ticket_id,
+                    full_name,
+                    balance,
+                    datetime.utcnow().isoformat(),
+                    request.remote_addr
+                ))
+
+                conn.commit()  # 🔴 REQUIRED
+
+            except Exception as e:
+                print("DB ERROR:", e)
+                error_message = "A system error occurred. Please try again."
+
             finally:
-                cursor.close()
-                conn.close()
-    return render_template('check_balance.html', balance=balance, error_message=error_message)
+                if cursor:
+                    cursor.close()
+                if conn:
+                    conn.close()
+
+    return render_template(
+        "check_balance.html",
+        balance=balance,
+        error_message=error_message
+    )
+
+    #       
+    #     full_name = request.form.get('full_name') or request.form.get('ticket_id')
+    #     if not full_name:
+    #         error_message = "Name is required."
+    #     else:
+    #         try:
+    #             conn = get_db_connection()
+    #             cursor = conn.cursor()
+    #             if str(full_name).isdigit():
+    #                 cursor.execute("SELECT balance FROM coupons WHERE ticket_id = ?", (full_name,))
+    #             else:
+    #                 cursor.execute("SELECT balance FROM coupons WHERE full_name = ?", (full_name,))
+    #             result = cursor.fetchone()
+    #             if result:
+    #                 balance = result[0]
+    #             else:
+    #                 error_message = "Coupon not found."
+    #         except sqlite3.Error:
+    #             error_message = "Database connection error."
+    #         finally:
+    #             cursor.close()
+    #             conn.close()
+    # return render_template('check_balance.html', balance=balance, error_message=error_message)
+    
 
 @app.route('/deduct_balance', methods=['GET', 'POST'])
 def deduct_balance():
