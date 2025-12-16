@@ -3,6 +3,7 @@
 <head>
     <title>Funfair QR</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
     <style>
         body {
             font-family: Arial;
@@ -18,14 +19,38 @@
             max-width: 400px;
             margin: auto;
         }
+        .print-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #4b4b9f;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        /* Hide button while printing */
+        @media print {
+            .print-btn {
+                display: none;
+            }
+        }
     </style>
 </head>
+
 <body>
     <div class="card">
         <h2>🎫 Funfair Entry</h2>
+
         <p><strong>Name:</strong> {{ full_name }}</p>
         <p><strong>Ticket ID:</strong> {{ ticket_id }}</p>
         <p><strong>Balance:</strong> AED {{ balance }}</p>
+
+        <!-- ✅ ADD THIS BUTTON -->
+        <button class="print-btn" onclick="window.print()">
+            🖨️ Print QR
+        </button>
     </div>
 </body>
 </html>
