@@ -272,8 +272,8 @@ def issue_coupon(full_name, amount, admin_username):
     qr_url = f"{base_url}/scan/{ticket_id}"
 
     # Generate QR code URL for authenticator
-   #qr_code_url = f"http://localhost:5001/authenticator?ticket_id={ticket_id}"
-    qr_code_url = f"http://localhost:5001/scan/{ticket_id}"
+    qr_code_url = "https://funfair2026.herokuapp.com"
+    
 
     # Generate QR code for the coupon with the URL
     qr = qrcode.make(qr_code_url)
