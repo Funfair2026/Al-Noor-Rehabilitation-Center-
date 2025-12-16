@@ -1236,9 +1236,23 @@ def process_payment():
             return jsonify({"error": "Insufficient balance."}), 400
 
         # Deduct and log transaction
-        new_balance = float(current_balance) - amount_to_deduct
-        cursor.execute("UPDATE coupons SET balance = ? WHERE ticket_id = ?", (new_balance, ticket_id))
-        cursor.execute("INSERT INTO counters (name, amount, staff, customer) VALUES (?, ?, ?, ?)", (counter, amount_to_deduct, user, customer_name))
+        # new_balance = float(current_balance) - amount_to_deduct
+        # cursor.execute("UPDATE coupons SET balance = ? WHERE ticket_id = ?", (new_balance, ticket_id))
+        # cursor.execute("INSERT INTO counters (name, amount, staff, customer) VALUES (?, ?, ?, ?)", (counter, amount_to_deduct, user, customer_name))
+        # conn.commit()
+        payment_type = data.get("payment_type", "WALLET")
+        if payment_type == "WALLET":
+            new_balance = float(current_balance) - amount_to_deduct
+            cursor.execute(
+                "UPDATE coupons SET balance = ? WHERE ticket_id = ?",
+                (new_balance, ticket_id)
+            )
+        else:
+            new_balance = float(current_balance)
+        cursor.execute(
+            "INSERT INTO counters (name, amount, staff, customer) VALUES (?, ?, ?, ?)",
+            (counter, amount_to_deduct, user, customer_name)
+        )
         conn.commit()
 
         # Log the payment activity
