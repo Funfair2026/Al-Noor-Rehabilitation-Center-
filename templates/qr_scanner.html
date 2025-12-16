@@ -196,19 +196,26 @@
         }
 
         function handleQRCode(qrData) {
-            // Extract ticket ID from QR code URL
-            const urlParams = new URLSearchParams(qrData.split('?')[1]);
-            const ticketId = urlParams.get('ticket_id');
+            //Extract ticket ID from QR code URL
+            // const urlParams = new URLSearchParams(qrData.split('?')[1]);
+            // const ticketId = urlParams.get('ticket_id');
             
-            if (ticketId) {
-                currentTicketId = ticketId;
-                document.getElementById('scanned-data').textContent = `Ticket ID: ${ticketId}`;
-                document.getElementById('scanner-result').style.display = 'block';
-                stopScanner();
+            //     if (ticketId) {
+            //     currentTicketId = ticketId;
+            //     document.getElementById('scanned-data').textContent = `Ticket ID: ${ticketId}`;
+            //     document.getElementById('scanner-result').style.display = 'block';
+            //     stopScanner();
+            //     } else {
+            //     document.getElementById('message').innerHTML = 
+            //         '<div class="error-message">Invalid QR code format. Please use a valid funfair QR code.</div>';
+            //     } 
+            if (qrData.startsWith("http")) {
+                window.location.href = qrData;
             } else {
-                document.getElementById('message').innerHTML = 
-                    '<div class="error-message">Invalid QR code format. Please use a valid funfair QR code.</div>';
-            }
+                document.getElementById('message').innerHTML =
+                    '<div class="error-message">Invalid Funfair QR code</div>';
+            }  
+           
         }
 
         function checkBalanceFromQR() {

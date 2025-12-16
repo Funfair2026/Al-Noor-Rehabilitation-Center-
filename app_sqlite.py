@@ -247,6 +247,28 @@ def generate_secure_password(length=16):
     password = ''.join(secrets.choice(chars) for _ in range(length))
     return password
 
+@app.route("/scan/<int:ticket_id>")
+def scan_view(ticket_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT full_name, balance FROM coupons WHERE ticket_id = ?",
+        (ticket_id,)
+    )
+    row = cursor.fetchone()
+    conn.close()
+
+    if not row:
+        return "Invalid QR Code", 404
+
+    return render_template(
+        "qr_view.html",
+        full_name=row["full_name"],
+        ticket_id=ticket_id,
+        balance=row["balance"]
+    )
+
 def issue_coupon(full_name, amount, admin_username):
     """Issue a new QR code coupon for a visitor"""
     conn = get_db_connection()
@@ -272,7 +294,7 @@ def issue_coupon(full_name, amount, admin_username):
     qr_url = f"{base_url}/scan/{ticket_id}"
 
     # Generate QR code URL for authenticator
-    qr_code_url = "https://funfair2026.herokuapp.com"
+    qr_code_url = f"https://funfair2026.herokuapp.com/scan/{ticket_id}"
     
 
     # Generate QR code for the coupon with the URL
