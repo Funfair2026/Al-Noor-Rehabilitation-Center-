@@ -857,7 +857,9 @@ def issue_coupon_route():
     return jsonify({
         "message": "Coupon issued successfully",
         "qr_code_img_str": qr_code_img_str,
-        "print_url": f"/print_qr?visitor_name={full_name}&ticket_id={ticket_id}&balance={amount}&issue_date={datetime.now().strftime('%Y-%m-%d')}&qr_image={qr_code_img_str}"
+        "print_url": f"/print_qr/{ticket_id}"
+        
+        #"print_url": f"/print_qr?visitor_name={full_name}&ticket_id={ticket_id}&balance={amount}&issue_date={datetime.now().strftime('%Y-%m-%d')}&qr_image={qr_code_img_str}"
     })
 
 @app.route('/topup_coupon', methods=['POST'])
