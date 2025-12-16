@@ -1,6 +1,6 @@
+import sqlite3
 from flask import Flask, jsonify, request, render_template, send_file, session, redirect, url_for
 import qrcode
-import sqlite3
 from PIL import Image, ImageDraw, ImageFont
 import os
 from flask_cors import CORS
@@ -863,9 +863,10 @@ def issue_coupon_route():
     })
 
 @app.route('/print_qr/<int:ticket_id>')
-@require_admin_auth
+#@require_admin_auth
 def print_qr(ticket_id):
     conn = get_db_connection()
+    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
     cursor.execute(
