@@ -91,7 +91,11 @@
     <div class="container">
         <h1>Funfair 2025</h1>
         <div class="qr">
-            <img id="qrImg" alt="QR Code"/>
+           <img
+                src="data:image/png;base64,{{ qr_code }}"
+                style="width:160px; height:160px;"
+                alt="QR Code"
+            />
         </div>
         <div class="meta">
             <div id="name"></div>
@@ -113,14 +117,9 @@
     -->
     <script>
         window.onload = function () {
-            window.print();
+            setTimeout(() => window.print(), 300);
         };
     </script>
-    <script>
-    window.onload = function () {
-        window.print();
-    };
-</script>
 </body>
 </html>
 
