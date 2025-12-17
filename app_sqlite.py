@@ -710,6 +710,13 @@ def check_balance_by_ticket():
         cursor.close()
         conn.close()
 
+    return render_template(
+    "check_balance.html",
+    balance=balance,
+    error_message=error_message
+    )
+
+
 # API endpoint for stall staff to scan QR code and start transaction
 @app.route('/scan_for_payment', methods=['POST'])
 def scan_for_payment():
@@ -880,6 +887,7 @@ def print_qr(ticket_id):
         (ticket_id,)
     )
     row = cursor.fetchone()
+    cursor.close()
     conn.close()
 
     if not row:
