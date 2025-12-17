@@ -935,61 +935,53 @@ def topup_coupon():
     finally:
         cursor.close()
         conn.close()
-
 @app.route('/check-balance', methods=['GET', 'POST'])
 def check_balance_page():
-    # If JSON request, behave as API and return JSON
-    if request.is_json:
-        data = request.get_json(silent=True) or {}
-        ticket_id_or_name = data.get('ticket_id') or data.get('full_name')
-        if not ticket_id_or_name:
-            return jsonify({"error": "ticket_id or full_name is required"}), 400
-
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        try:
-            # Try by ticket_id first if numeric
-            if str(ticket_id_or_name).isdigit():
-                cursor.execute("SELECT ticket_id, full_name, balance, issue_date FROM coupons WHERE ticket_id = ?", (ticket_id_or_name,))
-            else:
-                cursor.execute("SELECT ticket_id, full_name, balance, issue_date FROM coupons WHERE full_name = ?", (ticket_id_or_name,))
-            result = cursor.fetchone()
-            if not result:
-                return jsonify({"error": "Coupon not found."}), 404
-            return jsonify({
-                "ticket_id": result[0],
-                "full_name": result[1],
-                "balance": result[2],
-                "issue_date": result[3]
-            })
-        except sqlite3.Error:
-            return jsonify({"error": "Database connection error."}), 500
-        finally:
-            cursor.close()
-            conn.close()
-
-         # Default: render HTML form flow
         
-
         balance = None
         error_message = None
 
-    if request.method == "POST":
-        ticket_id = request.form.get("ticket_id", "").strip()
-        full_name = request.form.get("full_name", "").strip()
-
-        # ✅ CLEAN validation (no guessing)
-        if not ticket_id and not full_name:
-            error_message = "Ticket ID or Name is required."
-
-        else:
-            conn = None
-            cursor = None
+        if request.is_json:
+            data = request.get_json(silent=True) or {}
+            ticket_id_or_name = data.get('ticket_id') or data.get('full_name')
+            if not ticket_id_or_name:
+                return jsonify({"error": "ticket_id or full_name is required"}), 400
+            conn = get_db_connection()
+            cursor = conn.cursor()
             try:
+                if str(ticket_id_or_name).isdigit():
+                    cursor.execute(
+                        "SELECT ticket_id, full_name, balance FROM coupons WHERE ticket_id = ?",
+                        (ticket_id_or_name,)
+                    )
+                else:
+                    cursor.execute(
+                    "SELECT ticket_id, full_name, balance FROM coupons WHERE full_name = ?",
+                    (ticket_id_or_name,)
+                    )
+                row = cursor.fetchone()
+                if not row:
+                    return jsonify({"error": "Coupon not found"}), 404
+                
+                return jsonify({
+                    "ticket_id": row["ticket_id"],
+                    "full_name": row["full_name"],
+                    "balance": row["balance"]
+                })
+            finally:
+                cursor.close()
+                conn.close()
+        # ---------- HTML FORM MODE ----------
+        if request.method == "POST":
+            ticket_id = request.form.get("ticket_id", "").strip()
+            full_name = request.form.get("full_name", "").strip()
+
+            if not ticket_id and not full_name:
+                error_message = "Ticket ID or Name is required."
+            else:  
                 conn = get_db_connection()
                 cursor = conn.cursor()
-
-                # ✅ Explicit logic (production-safe)
+            try:
                 if ticket_id:
                     cursor.execute(
                         "SELECT ticket_id, full_name, balance FROM coupons WHERE ticket_id = ?",
@@ -1002,50 +994,129 @@ def check_balance_page():
                     )
 
                 row = cursor.fetchone()
-
                 if not row:
                     error_message = "Visitor not found."
                 else:
-                    ticket_id = row["ticket_id"]
-                    full_name = row["full_name"]
                     balance = row["balance"]
-
-                # ✅ SAVE visitor scan/check to DB (THIS WAS MISSING)
-
-                
-                cursor.execute("""
-                    INSERT INTO visitor_logs (
-                        ticket_id,
-                        full_name,
-                        balance,
-                        scanned_at,
-                        ip_address
-                    ) VALUES (?, ?, ?, ?, ?)
-                """, (
-                    ticket_id,
-                    full_name,
-                    balance,
-                    datetime.utcnow().isoformat(),
-                    request.remote_addr
-                ))
-
-                conn.commit()  # 🔴 REQUIRED
-
             except Exception as e:
                 print("DB ERROR:", e)
-                error_message = "A system error occurred. Please try again."
-
+                error_message = "System error. Please try again."
             finally:
-                if cursor:
-                    cursor.close()
-                if conn:
-                    conn.close()
+                cursor.close
+                conn.close
+        return render_template(
+            "check_balance.html",
+            balance=balance,
+            error_message=error_message
+        )     
+#     # If JSON request, behave as API and return JSON
+#     if request.is_json:
+#         data = request.get_json(silent=True) or {}
+#         ticket_id_or_name = data.get('ticket_id') or data.get('full_name')
+#         if not ticket_id_or_name:
+#             return jsonify({"error": "ticket_id or full_name is required"}), 400
 
-    return render_template(
-        "check_balance.html",
-        balance=balance,
-        error_message=error_message
-    )
+#         conn = get_db_connection()
+#         cursor = conn.cursor()
+#         try:
+#             # Try by ticket_id first if numeric
+#             if str(ticket_id_or_name).isdigit():
+#                 cursor.execute("SELECT ticket_id, full_name, balance, issue_date FROM coupons WHERE ticket_id = ?", (ticket_id_or_name,))
+#             else:
+#                 cursor.execute("SELECT ticket_id, full_name, balance, issue_date FROM coupons WHERE full_name = ?", (ticket_id_or_name,))
+#             result = cursor.fetchone()
+#             if not result:
+#                 return jsonify({"error": "Coupon not found."}), 404
+#             return jsonify({
+#                 "ticket_id": result[0],
+#                 "full_name": result[1],
+#                 "balance": result[2],
+#                 "issue_date": result[3]
+#             })
+#         except sqlite3.Error:
+#             return jsonify({"error": "Database connection error."}), 500
+#         finally:
+#             cursor.close()
+#             conn.close()
+
+#          # Default: render HTML form flow
+        
+
+#         balance = None
+#         error_message = None
+
+#     if request.method == "POST":
+#         ticket_id = request.form.get("ticket_id", "").strip()
+#         full_name = request.form.get("full_name", "").strip()
+
+#         # ✅ CLEAN validation (no guessing)
+#         if not ticket_id and not full_name:
+#             error_message = "Ticket ID or Name is required."
+
+#         else:
+#             conn = None
+#             cursor = None
+#             try:
+#                 conn = get_db_connection()
+#                 cursor = conn.cursor()
+
+#                 # ✅ Explicit logic (production-safe)
+#                 if ticket_id:
+#                     cursor.execute(
+#                         "SELECT ticket_id, full_name, balance FROM coupons WHERE ticket_id = ?",
+#                         (ticket_id,)
+#                     )
+#                 else:
+#                     cursor.execute(
+#                         "SELECT ticket_id, full_name, balance FROM coupons WHERE full_name = ?",
+#                         (full_name,)
+#                     )
+
+#                 row = cursor.fetchone()
+
+#                 if not row:
+#                     error_message = "Visitor not found."
+#                 else:
+#                     ticket_id = row["ticket_id"]
+#                     full_name = row["full_name"]
+#                     balance = row["balance"]
+
+#                 # ✅ SAVE visitor scan/check to DB (THIS WAS MISSING)
+
+                
+#                 cursor.execute("""
+#                     INSERT INTO visitor_logs (
+#                         ticket_id,
+#                         full_name,
+#                         balance,
+#                         scanned_at,
+#                         ip_address
+#                     ) VALUES (?, ?, ?, ?, ?)
+#                 """, (
+#                     ticket_id,
+#                     full_name,
+#                     balance,
+#                     datetime.utcnow().isoformat(),
+#                     request.remote_addr
+#                 ))
+
+#                 conn.commit()  # 🔴 REQUIRED
+
+#             except Exception as e:
+#                 print("DB ERROR:", e)
+#                 error_message = "A system error occurred. Please try again."
+
+#             finally:
+#                 if cursor:
+#                     cursor.close()
+#                 if conn:
+#                     conn.close()
+
+#     return render_template(
+#         "check_balance.html",
+#         balance=balance,
+#         error_message=error_message
+#     )
 
     #       
     #     full_name = request.form.get('full_name') or request.form.get('ticket_id')
