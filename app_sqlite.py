@@ -21,6 +21,8 @@ import secrets
 import bcrypt
 import re
 from dotenv import load_dotenv
+from qrcode.constants import ERROR_CORRECT_H
+
 
 
 # Load environment variables
@@ -326,46 +328,64 @@ def issue_coupon(full_name, amount, admin_username):
     
 
     # Generate QR code for the coupon with the URL
-    qr = qrcode.make(qr_code_url)
-    qr_img = qr.convert("RGB")
-    qr_width, qr_height = qr_img.size
+    # qr = qrcode.make(qr_code_url)
+    # qr_img = qr.convert("RGB")
+    # qr_width, qr_height = qr_img.size
 
     # Create a new image with extra space for text
-    new_img_height = qr_height + 140
-    new_img = Image.new('RGB', (qr_width, new_img_height), (255, 255, 255))
+    # new_img_height = qr_height + 140
+    # new_img = Image.new('RGB', (qr_width, new_img_height), (255, 255, 255))
 
     # Paste the QR code onto the new image
-    new_img.paste(qr_img, (0, 110))
+    # new_img.paste(qr_img, (0, 110))
 
     # Create a drawing object to add text to the new image
-    draw = ImageDraw.Draw(new_img)
+    # draw = ImageDraw.Draw(new_img)
 
     # Draw "Funfair 2025" at the top
-    funfair_text = "Funfair 2025"
-    funfair_position = ((qr_width - draw.textbbox((0, 0), funfair_text, font=ImageFont.load_default())[2]) // 2, 5)
-    draw.text(funfair_position, funfair_text, font=ImageFont.load_default(), fill=(0, 0, 0))
+    # funfair_text = "Funfair 2025"
+    # funfair_position = ((qr_width - draw.textbbox((0, 0), funfair_text, font=ImageFont.load_default())[2]) // 2, 5)
+    # draw.text(funfair_position, funfair_text, font=ImageFont.load_default(), fill=(0, 0, 0))
 
     # Draw "Coupon" below "Funfair 2025"
-    coupon_text = "Coupon"
-    coupon_position = ((qr_width - draw.textbbox((0, 0), coupon_text, font=ImageFont.load_default())[2]) // 2, 30)
-    draw.text(coupon_position, coupon_text, font=ImageFont.load_default(), fill=(0, 0, 0))
+    # coupon_text = "Coupon"
+    # coupon_position = ((qr_width - draw.textbbox((0, 0), coupon_text, font=ImageFont.load_default())[2]) // 2, 30)
+    # draw.text(coupon_position, coupon_text, font=ImageFont.load_default(), fill=(0, 0, 0))
 
     # Draw the full name below "Coupon"
-    name_bbox = draw.textbbox((0, 0), full_name, font=ImageFont.load_default())
-    name_position = ((qr_width - (name_bbox[2] - name_bbox[0])) // 2, 50)
-    draw.text(name_position, full_name, font=ImageFont.load_default(), fill=(0, 0, 0))
+    # name_bbox = draw.textbbox((0, 0), full_name, font=ImageFont.load_default())
+    # name_position = ((qr_width - (name_bbox[2] - name_bbox[0])) // 2, 50)
+    # draw.text(name_position, full_name, font=ImageFont.load_default(), fill=(0, 0, 0))
 
     # Draw the ticket ID below the name
-    ticket_id_text = f"Ticket ID: {ticket_id}"
-    ticket_bbox = draw.textbbox((0, 0), ticket_id_text, font=ImageFont.load_default())
-    ticket_position = ((qr_width - (ticket_bbox[2] - ticket_bbox[0])) // 2, 70)
-    draw.text(ticket_position, ticket_id_text, font=ImageFont.load_default(), fill=(0, 0, 0))
+    # ticket_id_text = f"Ticket ID: {ticket_id}"
+    # ticket_bbox = draw.textbbox((0, 0), ticket_id_text, font=ImageFont.load_default())
+    # ticket_position = ((qr_width - (ticket_bbox[2] - ticket_bbox[0])) // 2, 70)
+    # draw.text(ticket_position, ticket_id_text, font=ImageFont.load_default(), fill=(0, 0, 0))
 
     # Save QR code image to a BytesIO buffer
-    buffered = BytesIO()
-    new_img.save(buffered, format="PNG")
-    qr_img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+    # buffered = BytesIO()
+    # new_img.save(buffered, format="PNG")
+    qr = qrcode.QRCode(
+    version=None,
+    error_correction=ERROR_CORRECT_H,
+    box_size=10,
+    border=4
+    )
 
+    qr.add_data(qr_code_url)
+    qr.make(fit=True)
+
+    qr_img = qr.make_image(
+        fill_color="black",
+        back_color="white"
+    )
+
+    buffered = BytesIO()
+    qr_img.save(buffered, format="PNG")
+
+    qr_img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+    
     # Update the database with the generated QR code image string
     cursor.execute("UPDATE coupons SET qr_code = ? WHERE ticket_id = ?", (qr_img_str, ticket_id))
 
@@ -937,61 +957,60 @@ def topup_coupon():
         conn.close()
 @app.route('/check-balance', methods=['GET', 'POST'])
 def check_balance_page():
-        
-        balance = None
-        error_message = None
+    balance = None
+    error_message = None
 
-        if request.is_json:
-            data = request.get_json(silent=True) or {}
-            ticket_id_or_name = data.get('ticket_id') or data.get('full_name')
-            if not ticket_id_or_name:
-                return jsonify({"error": "ticket_id or full_name is required"}), 400
+    if request.is_json:
+        data = request.get_json(silent=True) or {}
+        ticket_id_or_name = data.get('ticket_id') or data.get('full_name')
+        if not ticket_id_or_name:
+            return jsonify({"error": "ticket_id or full_name is required"}), 400
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        try:
+            if str(ticket_id_or_name).isdigit():
+                cursor.execute(
+                    "SELECT ticket_id, full_name, balance FROM coupons WHERE ticket_id = ?",
+                    (ticket_id_or_name,)
+                )
+            else:
+                cursor.execute(
+                "SELECT ticket_id, full_name, balance FROM coupons WHERE full_name = ?",
+                (ticket_id_or_name,)
+                )
+            row = cursor.fetchone()
+            if not row:
+                return jsonify({"error": "Coupon not found"}), 404
+                
+            return jsonify({
+                "ticket_id": row["ticket_id"],
+                "full_name": row["full_name"],
+                "balance": row["balance"]
+            })
+        finally:
+            cursor.close()
+            conn.close()
+        # ---------- HTML FORM MODE ----------
+    if request.method == "POST":
+        ticket_id = request.form.get("ticket_id", "").strip()
+        full_name = request.form.get("full_name", "").strip()
+
+        if not ticket_id and not full_name:
+            error_message = "Ticket ID or Name is required."
+        else:  
             conn = get_db_connection()
             cursor = conn.cursor()
             try:
-                if str(ticket_id_or_name).isdigit():
+                if ticket_id:
                     cursor.execute(
-                        "SELECT ticket_id, full_name, balance FROM coupons WHERE ticket_id = ?",
-                        (ticket_id_or_name,)
-                    )
+                    "SELECT ticket_id, full_name, balance FROM coupons WHERE ticket_id = ?",
+                    (ticket_id,)
+                )
                 else:
                     cursor.execute(
                     "SELECT ticket_id, full_name, balance FROM coupons WHERE full_name = ?",
-                    (ticket_id_or_name,)
-                    )
-                row = cursor.fetchone()
-                if not row:
-                    return jsonify({"error": "Coupon not found"}), 404
-                
-                return jsonify({
-                    "ticket_id": row["ticket_id"],
-                    "full_name": row["full_name"],
-                    "balance": row["balance"]
-                })
-            finally:
-                cursor.close()
-                conn.close()
-        # ---------- HTML FORM MODE ----------
-        if request.method == "POST":
-            ticket_id = request.form.get("ticket_id", "").strip()
-            full_name = request.form.get("full_name", "").strip()
-
-            if not ticket_id and not full_name:
-                error_message = "Ticket ID or Name is required."
-            else:  
-                conn = get_db_connection()
-                cursor = conn.cursor()
-            try:
-                if ticket_id:
-                    cursor.execute(
-                        "SELECT ticket_id, full_name, balance FROM coupons WHERE ticket_id = ?",
-                        (ticket_id,)
-                    )
-                else:
-                    cursor.execute(
-                        "SELECT ticket_id, full_name, balance FROM coupons WHERE full_name = ?",
-                        (full_name,)
-                    )
+                    (full_name,)
+                )
 
                 row = cursor.fetchone()
                 if not row:
@@ -1002,8 +1021,9 @@ def check_balance_page():
                 print("DB ERROR:", e)
                 error_message = "System error. Please try again."
             finally:
-                cursor.close
-                conn.close
+                cursor.close()
+                conn.close()
+
         return render_template(
             "check_balance.html",
             balance=balance,
