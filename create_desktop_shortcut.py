@@ -12,6 +12,7 @@ import sys
 import platform
 from pathlib import Path
 
+
 def create_windows_shortcut():
     """Create Windows desktop shortcut"""
     try:

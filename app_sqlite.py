@@ -342,12 +342,12 @@ def issue_coupon(full_name, amount, admin_username):
     # Create a drawing object to add text to the new image
     # draw = ImageDraw.Draw(new_img)
 
-    # Draw "Funfair 2025" at the top
-    # funfair_text = "Funfair 2025"
+    # Draw "Funfair 2026" at the top
+    # funfair_text = "Funfair 2026"
     # funfair_position = ((qr_width - draw.textbbox((0, 0), funfair_text, font=ImageFont.load_default())[2]) // 2, 5)
     # draw.text(funfair_position, funfair_text, font=ImageFont.load_default(), fill=(0, 0, 0))
 
-    # Draw "Coupon" below "Funfair 2025"
+    # Draw "Coupon" below "Funfair 2026"
     # coupon_text = "Coupon"
     # coupon_position = ((qr_width - draw.textbbox((0, 0), coupon_text, font=ImageFont.load_default())[2]) // 2, 30)
     # draw.text(coupon_position, coupon_text, font=ImageFont.load_default(), fill=(0, 0, 0))

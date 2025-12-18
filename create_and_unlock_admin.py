@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> cd23e50fddc65eb92ec656705c0a4ea9e19583fb
+
 #!/usr/bin/env python3
 """
 Script to create an admin account or unlock an existing one.
@@ -69,9 +66,7 @@ if __name__ == '__main__':
     
     create_or_unlock_admin(username, password)
 
-<<<<<<< HEAD
-=======
-=======
+
 #!/usr/bin/env python3
 """
 Script to create an admin account or unlock an existing one.
@@ -139,5 +134,4 @@ if __name__ == '__main__':
     
     create_or_unlock_admin(username, password)
 
->>>>>>> f3bb10cdc5b8ca858978cdc385bfcec68c014435
->>>>>>> cd23e50fddc65eb92ec656705c0a4ea9e19583fb
+
