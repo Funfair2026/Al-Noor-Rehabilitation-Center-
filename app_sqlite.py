@@ -30,10 +30,9 @@ load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
-
 # SQLite database configuration
 DATABASE = 'funfair.db'
-
+print("USING DATABASE:", os.path.abspath(DATABASE))
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 
