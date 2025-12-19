@@ -1,5 +1,6 @@
 import sqlite3
-from flask import Flask, jsonify, request, render_template, send_file, session, redirect, url_for
+from app_sqlite import init_db, get_visitors, add_visitor
+from flask import Flask, jsonify, request, render_template, send_file, session, redirect, url_for, flash
 import qrcode
 from PIL import Image, ImageDraw, ImageFont
 import os
@@ -30,7 +31,7 @@ load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
-# SQLite database configuration
+# SQLite database configuratiion
 DATABASE = 'funfair.db'
 print("USING DATABASE:", os.path.abspath(DATABASE))
 # Set up logging
@@ -194,8 +195,219 @@ def create_table_if_not_exists():
     except sqlite3.Error as err:
         logging.error(f"Database error: {err}")
     finally:
-        cursor.close()
-        conn.close()
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+# =============================
+# Visitors DB HELPER
+# =============================
+
+def get_visitors():
+    try:
+        with get_db_connection() as conn:
+            return conn.execute("""
+                SELECT *
+                FROM visitors
+                ORDER BY issue_date DESC
+            """).fetchall()
+    except Exception as e:
+        print("GET VISITORS ERROR:", e)
+        return []
+
+def add_visitor(ticket_id, full_name, amount, balance, qr_code, pin):
+    issue_date = datetime.now().isoformat()
+
+    try:
+        with get_db_connection() as conn:
+            conn.execute("""
+                INSERT INTO visitors
+                (ticket_id, full_name, amount, balance, qr_code, issue_date, pin)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (ticket_id, full_name, amount, balance, qr_code, issue_date, pin))
+            conn.commit()
+            return True
+
+    except sqlite3.IntegrityError as e:
+        print("VISITOR DUPLICATE / CONSTRAINT ERROR:", e)
+        return False
+    except Exception as e:
+        print("VISITOR INSERT ERROR:", e)
+        return False
+
+# =============================
+# CORPORATES DB HELPER
+# =============================
+def get_corporates():
+    try:
+        with get_db_connection() as conn:
+            return conn.execute("""
+                SELECT *
+                FROM corporates
+                ORDER BY company_name ASC
+            """).fetchall()
+    except Exception as e:
+        print("GET CORPORATES ERROR:", e)
+        return []
+    
+def add_corporate(company_name, stall_count, total_revenue,
+                  contact_person, stall_name, contact_email):
+
+    created_at = datetime.now().isoformat()
+
+    try:
+        with get_db_connection() as conn:
+            conn.execute("""
+                INSERT INTO corporates
+                (company_name, stall_count, total_revenue,
+                 contact_person, created_at, stall_name, contact_email)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (
+                company_name, stall_count, total_revenue,
+                contact_person, created_at, stall_name, contact_email
+            ))
+            conn.commit()
+            return True
+    except sqlite3.IntegrityError as e:
+        print("CORPORATE DUPLICATE ERROR:", e)
+        return False
+    except Exception as e:
+        print("CORPORATE INSERT ERROR:", e)
+        return False
+    
+# =============================
+# PAYMENTS DB HELPER
+# =============================
+
+def get_payments():
+    try:
+        with get_db_connection() as conn:
+            return conn.execute("""
+                SELECT *
+                FROM payments
+                ORDER BY created_at DESC
+            """).fetchall()
+    except Exception as e:
+        print("GET PAYMENTS ERROR:", e)
+        return []
+    
+def add_payment(ticket_id, amount, payment_mode, reference_id):
+    created_at = datetime.now().isoformat()
+
+    try:
+        with get_db_connection() as conn:
+            conn.execute("""
+                INSERT INTO payments
+                (ticket_id, amount, payment_mode, reference_id, created_at)
+                VALUES (?, ?, ?, ?, ?)
+            """, (ticket_id, amount, payment_mode, reference_id, created_at))
+            conn.commit()
+            return True
+
+    except Exception as e:
+        print("PAYMENT INSERT ERROR:", e)
+        return False
+    
+# =============================
+# ADMIN_USERS DB HELPER
+# =============================
+
+def get_admin_users():
+    try:
+        with get_db_connection() as conn:
+            return conn.execute("""
+                SELECT *
+                FROM admin_users
+                ORDER BY created_at DESC
+            """).fetchall()
+    except Exception as e:
+        print("GET ADMIN USERS ERROR:", e)
+        return []
+
+def add_admin_user(username, password, role):
+    created_at = datetime.now().isoformat()
+
+    try:
+        with get_db_connection() as conn:
+            conn.execute("""
+                INSERT INTO admin_users
+                (username, password, role, created_at)
+                VALUES (?, ?, ?, ?)
+            """, (username, password, role, created_at))
+            conn.commit()
+            return True
+    except sqlite3.IntegrityError as e:
+        print("ADMIN USER DUPLICATE:", e)
+        return False
+    except Exception as e:
+        print("ADMIN USER INSERT ERROR:", e)
+        return False
+# =============================
+# audit_logs DB HELPER
+# =============================
+    
+def get_audit_logs(limit=100):
+    try:
+        with get_db_connection() as conn:
+            return conn.execute("""
+                SELECT *
+                FROM audit_logs
+                ORDER BY timestamp DESC
+                LIMIT ?
+            """, (limit,)).fetchall()
+    except Exception as e:
+        print("GET AUDIT LOGS ERROR:", e)
+        return []
+
+def add_audit_log(action, entity, entity_id, performed_by):
+    timestamp = datetime.now().isoformat()
+
+    try:
+        with get_db_connection() as conn:
+            conn.execute("""
+                INSERT INTO audit_logs
+                (action, entity, entity_id, performed_by, timestamp)
+                VALUES (?, ?, ?, ?, ?)
+            """, (action, entity, entity_id, performed_by, timestamp))
+            conn.commit()
+            return True
+    except Exception as e:
+        print("AUDIT LOG ERROR:", e)
+        return False
+    
+# =============================
+# system_logs DB HELPER
+# =============================
+
+def get_system_logs(limit=100):
+    try:
+        with get_db_connection() as conn:
+            return conn.execute("""
+                SELECT *
+                FROM system_logs
+                ORDER BY created_at DESC
+                LIMIT ?
+            """, (limit,)).fetchall()
+    except Exception as e:
+        print("GET SYSTEM LOGS ERROR:", e)
+        return []
+
+def add_system_log(level, message):
+    created_at = datetime.now().isoformat()
+
+    try:
+        with get_db_connection() as conn:
+            conn.execute("""
+                INSERT INTO system_logs (level, message, created_at)
+                VALUES (?, ?, ?)
+            """, (level, message, created_at))
+            conn.commit()
+            return True
+    except Exception as e:
+        print("SYSTEM LOG ERROR:", e)
+        return False
+
 
 def apply_schema_upgrades():
     """Apply lightweight schema upgrades for existing SQLite DBs."""
@@ -535,7 +747,132 @@ def require_admin_page_auth(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# Admin login route
+# -------------------
+# Visitor routes
+# -------------------
+@app.route("/visitors")
+def visitors_page():
+    visitors = get_visitors()
+    return render_template("visitors.html", visitors=visitors)
+
+@app.route("/visitors/add", methods=["POST"])
+def add_visitor_route():
+    success = add_visitor(
+        ticket_id=request.form["ticket_id"],
+        full_name=request.form["full_name"],
+        amount=request.form["amount"],
+        balance=request.form["balance"],
+        qr_code=request.form["qr_code"],
+        pin=request.form["pin"]
+    )
+
+    if success:
+        flash("Visitor added successfully")
+    else:
+        flash("Failed to add visitor")
+
+    return redirect(url_for("visitors_page"))
+
+# -------------------
+# corporates routes
+# -------------------
+
+@app.route("/corporates")
+def corporates_page():
+    corporates = get_corporates()
+    return render_template("corporates.html", corporates=corporates)
+
+@app.route("/corporates/add", methods=["POST"])
+def add_corporate_route():
+    success = add_corporate(
+        company_name=request.form["company_name"],
+        stall_count=request.form["stall_count"],
+        total_revenue=request.form["total_revenue"],
+        contact_person=request.form["contact_person"],
+        stall_name=request.form["stall_name"],
+        contact_email=request.form["contact_email"]
+    )
+    if success:
+        flash("Corporate added successfully")
+    else:
+        flash("Failed to add corporate")
+    return redirect(url_for("corporates_page"))
+
+# -------------------
+# payments routes
+# -------------------
+
+@app.route("/payments")
+def payments_page():
+    payments = get_payments()
+    return render_template("payments.html", payments=payments)
+
+@app.route("/payments/add", methods=["POST"])
+def add_payment_route():
+    success = add_payment(
+        ticket_id=request.form["ticket_id"],
+        amount=request.form["amount"],
+        payment_mode=request.form["payment_mode"],
+        reference_id=request.form["reference_id"]
+    )
+    if success:
+        flash("Payment recorded successfully")
+    else:
+        flash("Failed to record payment")
+    return redirect(url_for("payments_page"))
+
+# -------------------
+# admin_users routes
+# -------------------
+
+@app.route("/admin_users")
+def admin_users_page():
+    admin_users = get_admin_users()
+    return render_template("admin_users.html", admin_users=admin_users)
+
+@app.route("/admin_users/add", methods=["POST"])
+def add_admin_user_route():
+    success = add_admin_user(
+        username=request.form["username"],
+        password=request.form["password"],
+        role=request.form["role"]
+    )
+    if success:
+        flash("Admin user added successfully")
+    else:
+        flash("Failed to add admin user")
+
+    return redirect(url_for("admin_users_page"))
+
+import sqlite3
+from datetime import datetime
+
+def add_visitor(name, amount, balance):
+    """Insert a single visitor efficiently"""
+    try:
+        date = datetime.now().strftime("%m/%d/%Y, %I:%M:%S %p")
+
+        # Open connection with isolation_level=None for faster autocommit
+        conn = sqlite3.connect(DATABASE, isolation_level=None, timeout=10)
+        cursor = conn.cursor()
+
+        # Use parameterized query (safe + fast)
+        cursor.execute("""
+            INSERT INTO visitor_logs (name, amount, balance, date)
+            VALUES (?, ?, ?, ?)
+        """, (name, amount, balance, date))
+
+    except sqlite3.Error as e:
+        print(f"Error adding visitor: {e}")
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+# -------------------
+# Admins routes
+# -------------------
 @app.route('/admin_login', methods=['POST'])
 @limiter.limit("10 per 15 minutes")
 def admin_login():

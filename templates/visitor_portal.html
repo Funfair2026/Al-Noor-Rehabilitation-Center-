@@ -1,3 +1,114 @@
+<!--<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Funfair Visitor Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(147, 51, 234, 0.3); }
+            50% { box-shadow: 0 0 30px rgba(147, 51, 234, 0.6); }
+        }
+        .animate-fade-in { animation: fadeIn 0.8s ease-out; }
+        .animate-slide-up { animation: slideUp 0.8s ease-out; }
+        .animate-glow { animation: glow 2s ease-in-out infinite; }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+    Header -->
+    <!--<div class="container mx-auto px-4 py-8">
+        <div class="text-center mb-12 animate-fade-in">
+            <h1 class="text-5xl font-bold text-white mb-4 bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
+                Funfair Visitor Portal
+            </h1>
+            <p class="text-xl text-white/80 mb-8">Welcome to the Funfair! Manage your QR code and enjoy the experience.</p>
+        </div>
+
+        Visitor Actions -->
+        <!--<div class="max-w-4xl mx-auto">
+            <div class="grid md:grid-cols-2 gap-8 mb-12">
+                #Check Balance Card
+                <div class="group relative animate-slide-up" style="animation-delay: 0.2s;">
+                    <div class="absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-glow"></div>
+                    <div class="relative bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-8 hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-2 hover:scale-105">
+                        <div class="text-center">
+                            <div class="text-6xl mb-6 animate-bounce-slow" style="animation-delay: 1s;">💰</div>
+                            <h3 class="text-2xl font-bold text-white mb-4">Check Balance</h3>
+                            <p class="text-white/80 mb-6 text-sm">Check your QR code balance and transaction history</p>
+                            <a href="/check-balance" class="inline-block bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+                                Check Balance
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                #Top-up Instructions Card
+                <div class="group relative animate-slide-up" style="animation-delay: 0.4s;">
+                    <div class="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-glow"></div>
+                    <div class="relative bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-8 hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-2 hover:scale-105">
+                        <div class="text-center">
+                            <div class="text-6xl mb-6 animate-bounce-slow" style="animation-delay: 1.2s;">💳</div>
+                            <h3 class="text-2xl font-bold text-white mb-4">Top-up Instructions</h3>
+                            <p class="text-white/80 mb-6 text-sm">Learn how to recharge your QR code at alnoor stations</p>
+                            <a href="/topup-instructions" class="inline-block bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+                                How to Top-up
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            #Information Section
+            <div class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-8 animate-slide-up" style="animation-delay: 0.6s;">
+                <h3 class="text-2xl font-bold text-white mb-6 text-center">How It Works</h3>
+                <div class="grid md:grid-cols-3 gap-6">
+                    <div class="text-center">
+                        <div class="text-4xl mb-4">🎫</div>
+                        <h4 class="text-lg font-semibold text-white mb-2">Get Your QR Code</h4>
+                        <p class="text-white/70 text-sm">Visit any alnoor station to purchase your QR code with initial balance</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-4xl mb-4">🛒</div>
+                        <h4 class="text-lg font-semibold text-white mb-2">Use at Corporates</h4>
+                        <p class="text-white/70 text-sm">Show your QR code at food corporates, games, and rides for instant payment</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-4xl mb-4">🔄</div>
+                        <h4 class="text-lg font-semibold text-white mb-2">Recharge Anytime</h4>
+                        <p class="text-white/70 text-sm">Add more money to your QR code at any alnoor station when needed</p>
+                    </div>
+                </div>
+            </div>
+
+            #Back to Home Button
+            <div class="mt-12 text-center animate-slide-up" style="animation-delay: 0.8s;">
+                <a 
+                    href="/" 
+                    class="inline-flex items-center bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl transition-all duration-300 transform hover:scale-105"
+                >
+                    <span class="mr-2">🏠</span>
+                    Back to Home
+                </a>
+            </div>
+        </div>
+    </div>
+
+    #Footer
+    <div class="text-center py-8 text-white/60">
+        <p>&copy; 2026 Funfair QR Code Payment System. Enjoy your visit!</p>
+    </div>
+</body>
+</html>-->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -67,8 +178,21 @@
                 </div>
             </div>
 
+            <!-- Add Visitor Form -->
+            <div class="max-w-md mx-auto bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 mb-12 animate-slide-up" style="animation-delay: 0.6s;">
+                <h3 class="text-2xl font-bold text-white mb-4 text-center">Add New Visitor</h3>
+                <form action="/add_visitor" method="POST" class="space-y-4">
+                    <input type="text" name="name" placeholder="Name" required class="w-full p-2 rounded-md">
+                    <input type="number" name="amount" placeholder="Amount" required class="w-full p-2 rounded-md">
+                    <input type="number" name="balance" placeholder="Balance" required class="w-full p-2 rounded-md">
+                    <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-md transition-all">
+                        Add Visitor
+                    </button>
+                </form>
+            </div>
+
             <!-- Information Section -->
-            <div class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-8 animate-slide-up" style="animation-delay: 0.6s;">
+            <div class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-8 animate-slide-up" style="animation-delay: 0.8s;">
                 <h3 class="text-2xl font-bold text-white mb-6 text-center">How It Works</h3>
                 <div class="grid md:grid-cols-3 gap-6">
                     <div class="text-center">
@@ -90,7 +214,7 @@
             </div>
 
             <!-- Back to Home Button -->
-            <div class="mt-12 text-center animate-slide-up" style="animation-delay: 0.8s;">
+            <div class="mt-12 text-center animate-slide-up" style="animation-delay: 1s;">
                 <a 
                     href="/" 
                     class="inline-flex items-center bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl transition-all duration-300 transform hover:scale-105"
@@ -108,4 +232,3 @@
     </div>
 </body>
 </html>
-
