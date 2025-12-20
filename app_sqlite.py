@@ -543,7 +543,7 @@ def issue_coupon(full_name, amount, admin_username):
 
     return qr_img_str, ticket_id
 
-# Helper functions
+# DB Helper functions
 def log_activity(user_type, user_id, action, details="", ip_address=None):
     """Log system activity with enhanced details for super admin actions"""
     conn = get_db_connection()
@@ -568,6 +568,59 @@ def log_activity(user_type, user_id, action, details="", ip_address=None):
     conn.commit()
     cursor.close()
     conn.close()
+
+# -----------------------------
+# Generate Ticket ID
+# -----------------------------
+
+def generate_ticket_id():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT MAX(ticket_id) FROM coupons")
+    result = cursor.fetchone()[0]
+    ticket_id = (result or 0) + 1
+    cursor.close()
+    conn.close()
+    return ticket_id
+
+# -----------------------------
+# Issue Coupon
+# -----------------------------
+
+def issue_coupon(full_name, amount, admin_username):
+    ticket_id = generate_ticket_id()
+
+    # Combine all details for the QR code
+    qr_data = f"Ticket ID: {ticket_id}\nName: {full_name}\nAmount: {amount}"
+
+    # Generate QR code
+    qr = qrcode.QRCode(version=1, box_size=10, border=5)
+    qr.add_data(qr_data)
+    qr.make(fit=True)
+    img = qr.make_image(fill="black", back_color="white")
+
+    # Convert QR image to base64 string
+    buffered = BytesIO()
+    img.save(buffered, format="PNG")
+    qr_code_img_str = base64.b64encode(buffered.getvalue()).decode()
+
+    # Save to database
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO coupons (ticket_id, full_name, amount, qr_code, issued_by, issue_date) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        (ticket_id, full_name, amount, qr_code_img_str, admin_username, datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return qr_code_img_str, ticket_id
+
+# -----------------------------
+# Admin auth
+# -----------------------------
 
 def require_admin_auth(f):
     """Decorator to require admin authentication - Session-less security"""
@@ -1112,7 +1165,7 @@ def issue_coupon_route():
         return jsonify({"error": str(e)}), 400
 
     # Log the activity
-    log_activity('admin', admin_username, 'issue_coupon', f'Issued coupon for {full_name}, amount: {amount}')
+    #log_activity('admin', admin_username, 'issue_coupon', f'Issued coupon for {full_name}, amount: {amount}')
     
     return jsonify({
         "message": "Coupon issued successfully",
@@ -1120,6 +1173,7 @@ def issue_coupon_route():
         "print_url": f"/print_qr/{ticket_id}",
         "full_name": full_name,
         "ticket_id": ticket_id,
+        "amount": amount,
         "event_title": "Funfair 2026"
         
         #"print_url": f"/print_qr?visitor_name={full_name}&ticket_id={ticket_id}&balance={amount}&issue_date={datetime.now().strftime('%Y-%m-%d')}&qr_image={qr_code_img_str}"
@@ -1133,7 +1187,7 @@ def print_qr(ticket_id):
     cursor = conn.cursor()
 
     cursor.execute(
-        "SELECT full_name, qr_code FROM coupons WHERE ticket_id = ?",
+        "SELECT full_name, qr_code, amount FROM coupons WHERE ticket_id = ?",
         (ticket_id,)
     )
     row = cursor.fetchone()
@@ -1147,6 +1201,7 @@ def print_qr(ticket_id):
         "print_qr.html",
         full_name=row["full_name"],
         ticket_id=ticket_id,
+         amount=row["amount"],
         qr_code=row["qr_code"]
     )
 
