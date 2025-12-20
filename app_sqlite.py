@@ -1,5 +1,5 @@
 import sqlite3
-from app_sqlite import init_db, get_visitors, add_visitor
+from contextlib import closing
 from flask import Flask, jsonify, request, render_template, send_file, session, redirect, url_for, flash
 import qrcode
 from PIL import Image, ImageDraw, ImageFont
@@ -200,213 +200,147 @@ def create_table_if_not_exists():
         if conn:
             conn.close()
 
-# =============================
-# Visitors DB HELPER
-# =============================
+# -----------------------------
+# Visitors
+# -----------------------------
+def add_visitors(ticket_id, full_name, amount, balance, qr_code, pin, performed_by="system"):
+    try:
+        with sqlite3.connect(DATABASE) as conn:
+            with closing(conn.cursor()) as cursor:
+                cursor.execute(
+                    "INSERT INTO visitors (ticket_id, full_name, amount, balance, qr_code, pin, issue_date) VALUES (?, ?, ?, ?, ?, ?, date('now'))",
+                    (ticket_id, full_name, amount, balance, qr_code, pin)
+                )
+            conn.commit()
+        add_audit_log("ADD", performed_by, "visitors", ticket_id)
+        return True
+    except Exception as e:
+        add_system_log(f"Visitor DB Error: {e}", "ERROR")
+        return False
 
 def get_visitors():
-    try:
-        with get_db_connection() as conn:
-            return conn.execute("""
-                SELECT *
-                FROM visitors
-                ORDER BY issue_date DESC
-            """).fetchall()
-    except Exception as e:
-        print("GET VISITORS ERROR:", e)
-        return []
+    with sqlite3.connect(DATABASE) as conn:
+        with closing(conn.cursor()) as cursor:
+            cursor.execute("SELECT * FROM visitors ORDER BY issue_date DESC")
+            return cursor.fetchall()
 
-def add_visitor(ticket_id, full_name, amount, balance, qr_code, pin):
-    issue_date = datetime.now().isoformat()
-
+# -----------------------------
+# Corporates
+# -----------------------------
+def add_corporate(company_name, stall_count, total_revenue, contact_person, stall_name, contact_email, performed_by="system"):
     try:
-        with get_db_connection() as conn:
-            conn.execute("""
-                INSERT INTO visitors
-                (ticket_id, full_name, amount, balance, qr_code, issue_date, pin)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (ticket_id, full_name, amount, balance, qr_code, issue_date, pin))
+        with sqlite3.connect(DATABASE) as conn:
+            with closing(conn.cursor()) as cursor:
+                cursor.execute(
+                    "INSERT INTO corporates (company_name, stall_count, total_revenue, contact_person, stall_name, contact_email, created_at) VALUES (?, ?, ?, ?, ?, ?, date('now'))",
+                    (company_name, stall_count, total_revenue, contact_person, stall_name, contact_email)
+                )
             conn.commit()
-            return True
-
-    except sqlite3.IntegrityError as e:
-        print("VISITOR DUPLICATE / CONSTRAINT ERROR:", e)
-        return False
+        add_audit_log("ADD", performed_by, "corporates", company_name)
+        return True
     except Exception as e:
-        print("VISITOR INSERT ERROR:", e)
+        add_system_log(f"Corporate DB Error: {e}", "ERROR")
         return False
 
-# =============================
-# CORPORATES DB HELPER
-# =============================
 def get_corporates():
-    try:
-        with get_db_connection() as conn:
-            return conn.execute("""
-                SELECT *
-                FROM corporates
-                ORDER BY company_name ASC
-            """).fetchall()
-    except Exception as e:
-        print("GET CORPORATES ERROR:", e)
-        return []
-    
-def add_corporate(company_name, stall_count, total_revenue,
-                  contact_person, stall_name, contact_email):
+    with sqlite3.connect(DATABASE) as conn:
+        with closing(conn.cursor()) as cursor:
+            cursor.execute("SELECT * FROM corporates ORDER BY created_at DESC")
+            return cursor.fetchall()
 
-    created_at = datetime.now().isoformat()
-
+# -----------------------------
+# Payments
+# -----------------------------
+def add_payment(ticket_id, amount, payment_mode, reference_id, performed_by="system"):
     try:
-        with get_db_connection() as conn:
-            conn.execute("""
-                INSERT INTO corporates
-                (company_name, stall_count, total_revenue,
-                 contact_person, created_at, stall_name, contact_email)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (
-                company_name, stall_count, total_revenue,
-                contact_person, created_at, stall_name, contact_email
-            ))
+        with sqlite3.connect(DATABASE) as conn:
+            with closing(conn.cursor()) as cursor:
+                cursor.execute(
+                    "INSERT INTO payments (ticket_id, amount, payment_mode, reference_id, payment_date) VALUES (?, ?, ?, ?, date('now'))",
+                    (ticket_id, amount, payment_mode, reference_id)
+                )
             conn.commit()
-            return True
-    except sqlite3.IntegrityError as e:
-        print("CORPORATE DUPLICATE ERROR:", e)
-        return False
+        add_audit_log("ADD", performed_by, "payments", ticket_id)
+        return True
     except Exception as e:
-        print("CORPORATE INSERT ERROR:", e)
+        add_system_log(f"Payment DB Error: {e}", "ERROR")
         return False
-    
-# =============================
-# PAYMENTS DB HELPER
-# =============================
 
 def get_payments():
-    try:
-        with get_db_connection() as conn:
-            return conn.execute("""
-                SELECT *
-                FROM payments
-                ORDER BY created_at DESC
-            """).fetchall()
-    except Exception as e:
-        print("GET PAYMENTS ERROR:", e)
-        return []
-    
-def add_payment(ticket_id, amount, payment_mode, reference_id):
-    created_at = datetime.now().isoformat()
+    with sqlite3.connect(DATABASE) as conn:
+        with closing(conn.cursor()) as cursor:
+            cursor.execute("SELECT * FROM payments ORDER BY payment_date DESC")
+            return cursor.fetchall()
 
+# -----------------------------
+# Admin Users
+# -----------------------------
+def add_admin_user(username, password, role, performed_by="system"):
     try:
-        with get_db_connection() as conn:
-            conn.execute("""
-                INSERT INTO payments
-                (ticket_id, amount, payment_mode, reference_id, created_at)
-                VALUES (?, ?, ?, ?, ?)
-            """, (ticket_id, amount, payment_mode, reference_id, created_at))
+        with sqlite3.connect(DATABASE) as conn:
+            with closing(conn.cursor()) as cursor:
+                cursor.execute(
+                    "INSERT INTO admin_users (username, password, role) VALUES (?, ?, ?)",
+                    (username, password, role)
+                )
             conn.commit()
-            return True
-
+        add_audit_log("ADD", performed_by, "admin_users", username)
+        return True
     except Exception as e:
-        print("PAYMENT INSERT ERROR:", e)
+        add_system_log(f"Admin DB Error: {e}", "ERROR")
         return False
-    
-# =============================
-# ADMIN_USERS DB HELPER
-# =============================
 
 def get_admin_users():
-    try:
-        with get_db_connection() as conn:
-            return conn.execute("""
-                SELECT *
-                FROM admin_users
-                ORDER BY created_at DESC
-            """).fetchall()
-    except Exception as e:
-        print("GET ADMIN USERS ERROR:", e)
-        return []
+    with sqlite3.connect(DATABASE) as conn:
+        with closing(conn.cursor()) as cursor:
+            cursor.execute("SELECT * FROM admin_users ORDER BY id DESC")
+            return cursor.fetchall()
 
-def add_admin_user(username, password, role):
-    created_at = datetime.now().isoformat()
-
+# -----------------------------
+# Audit Logs
+# -----------------------------
+def add_audit_log(action, performed_by, table_name, record_id):
     try:
-        with get_db_connection() as conn:
-            conn.execute("""
-                INSERT INTO admin_users
-                (username, password, role, created_at)
-                VALUES (?, ?, ?, ?)
-            """, (username, password, role, created_at))
+        with sqlite3.connect(DATABASE) as conn:
+            with closing(conn.cursor()) as cursor:
+                cursor.execute(
+                    "INSERT INTO audit_logs (action, performed_by, table_name, record_id, timestamp) VALUES (?, ?, ?, ?, datetime('now'))",
+                    (action, performed_by, table_name, record_id)
+                )
             conn.commit()
-            return True
-    except sqlite3.IntegrityError as e:
-        print("ADMIN USER DUPLICATE:", e)
-        return False
+        return True
     except Exception as e:
-        print("ADMIN USER INSERT ERROR:", e)
+        add_system_log(f"Audit Log DB Error: {e}", "ERROR")
         return False
-# =============================
-# audit_logs DB HELPER
-# =============================
-    
-def get_audit_logs(limit=100):
-    try:
-        with get_db_connection() as conn:
-            return conn.execute("""
-                SELECT *
-                FROM audit_logs
-                ORDER BY timestamp DESC
-                LIMIT ?
-            """, (limit,)).fetchall()
-    except Exception as e:
-        print("GET AUDIT LOGS ERROR:", e)
-        return []
 
-def add_audit_log(action, entity, entity_id, performed_by):
-    timestamp = datetime.now().isoformat()
+def get_audit_logs():
+    with sqlite3.connect(DATABASE) as conn:
+        with closing(conn.cursor()) as cursor:
+            cursor.execute("SELECT * FROM audit_logs ORDER BY timestamp DESC")
+            return cursor.fetchall()
 
+# -----------------------------
+# System Logs
+# -----------------------------
+def add_system_log(message, level="INFO"):
     try:
-        with get_db_connection() as conn:
-            conn.execute("""
-                INSERT INTO audit_logs
-                (action, entity, entity_id, performed_by, timestamp)
-                VALUES (?, ?, ?, ?, ?)
-            """, (action, entity, entity_id, performed_by, timestamp))
+        with sqlite3.connect(DATABASE) as conn:
+            with closing(conn.cursor()) as cursor:
+                cursor.execute(
+                    "INSERT INTO system_logs (message, level, timestamp) VALUES (?, ?, datetime('now'))",
+                    (message, level)
+                )
             conn.commit()
-            return True
-    except Exception as e:
-        print("AUDIT LOG ERROR:", e)
+        return True
+    except:
+        # Cannot log system log error
         return False
-    
-# =============================
-# system_logs DB HELPER
-# =============================
 
-def get_system_logs(limit=100):
-    try:
-        with get_db_connection() as conn:
-            return conn.execute("""
-                SELECT *
-                FROM system_logs
-                ORDER BY created_at DESC
-                LIMIT ?
-            """, (limit,)).fetchall()
-    except Exception as e:
-        print("GET SYSTEM LOGS ERROR:", e)
-        return []
-
-def add_system_log(level, message):
-    created_at = datetime.now().isoformat()
-
-    try:
-        with get_db_connection() as conn:
-            conn.execute("""
-                INSERT INTO system_logs (level, message, created_at)
-                VALUES (?, ?, ?)
-            """, (level, message, created_at))
-            conn.commit()
-            return True
-    except Exception as e:
-        print("SYSTEM LOG ERROR:", e)
-        return False
+def get_system_logs():
+    with sqlite3.connect(DATABASE) as conn:
+        with closing(conn.cursor()) as cursor:
+            cursor.execute("SELECT * FROM system_logs ORDER BY timestamp DESC")
+            return cursor.fetchall()
 
 
 def apply_schema_upgrades():
@@ -756,8 +690,8 @@ def visitors_page():
     return render_template("visitors.html", visitors=visitors)
 
 @app.route("/visitors/add", methods=["POST"])
-def add_visitor_route():
-    success = add_visitor(
+def add_visitors_route():
+    success = add_visitors(
         ticket_id=request.form["ticket_id"],
         full_name=request.form["full_name"],
         amount=request.form["amount"],
@@ -847,29 +781,6 @@ def add_admin_user_route():
 import sqlite3
 from datetime import datetime
 
-def add_visitor(name, amount, balance):
-    """Insert a single visitor efficiently"""
-    try:
-        date = datetime.now().strftime("%m/%d/%Y, %I:%M:%S %p")
-
-        # Open connection with isolation_level=None for faster autocommit
-        conn = sqlite3.connect(DATABASE, isolation_level=None, timeout=10)
-        cursor = conn.cursor()
-
-        # Use parameterized query (safe + fast)
-        cursor.execute("""
-            INSERT INTO visitor_logs (name, amount, balance, date)
-            VALUES (?, ?, ?, ?)
-        """, (name, amount, balance, date))
-
-    except sqlite3.Error as e:
-        print(f"Error adding visitor: {e}")
-
-    finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
 # -------------------
 # Admins routes
 # -------------------
