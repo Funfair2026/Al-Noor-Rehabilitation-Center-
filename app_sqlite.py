@@ -422,6 +422,50 @@ def generate_secure_password(length=16):
     password = ''.join(secrets.choice(chars) for _ in range(length))
     return password
 
+def generate_qr_hash(full_name, ticket_id, balance):
+    """Generate QR code as base64 string from coupon info."""
+    data = f"Funfair 2026|Ticket:{ticket_id}|Name:{full_name}|Balance:{balance}"
+    qr = qrcode.QRCode(version=1, box_size=10, border=4)
+    qr.add_data(data)
+    qr.make(fit=True)
+
+    img = qr.make_image(fill="black", back_color="white")
+    buffered = BytesIO()
+    img.save(buffered, format="PNG")
+    qr_base64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
+    return qr_base64
+
+def issue_coupon(full_name, balance, admin_username):
+    conn = sqlite3.connect("funfair.db")
+    cursor = conn.cursor()
+
+    """
+    Issue a coupon:
+    1. Saves coupon in DB
+    2. Generates and stores QR code
+    3. No issued_by column
+    4. Pin field stores admin_username
+    Returns: qr_code_base64, ticket_id
+    """
+    # Insert initial coupon row with empty QR
+    cursor.execute(
+        "INSERT INTO coupons (full_name, amount, balance, qr_code, pin) VALUES (?, ?, ?, ?, ?)",
+        (full_name, balance, balance, "", admin_username)
+    )
+    ticket_id = cursor.lastrowid
+
+    # Generate QR code
+    qr_code_img_str = generate_qr_hash(full_name, ticket_id, balance)
+
+    # Update DB row with QR code
+    cursor.execute(
+        "UPDATE coupons SET qr_code = ? WHERE ticket_id = ?",
+        (qr_code_img_str, ticket_id)
+    )
+    conn.commit()
+
+    return qr_code_img_str, ticket_id
+
 @app.route("/scan/<int:ticket_id>")
 def scan_view(ticket_id):
     conn = get_db_connection()
@@ -444,32 +488,32 @@ def scan_view(ticket_id):
         balance=row["balance"]
     )
 
-def issue_coupon(full_name, amount, admin_username):
-    """Issue a new QR code coupon for a visitor"""
-    conn = get_db_connection()
-    cursor = conn.cursor()
+# def issue_coupon(full_name, amount, admin_username):
+#     """Issue a new QR code coupon for a visitor"""
+#     conn = get_db_connection()
+#     cursor = conn.cursor()
 
-    # Check if the user already exists
-    cursor.execute("SELECT * FROM coupons WHERE full_name = ?", (full_name,))
-    existing_user = cursor.fetchone()
+#     # Check if the user already exists
+#     cursor.execute("SELECT * FROM coupons WHERE full_name = ?", (full_name,))
+#     existing_user = cursor.fetchone()
 
-    if existing_user:
-        cursor.close()
-        conn.close()
-        raise ValueError("User already exists. Coupon not issued. Please try a different name.")
+#     if existing_user:
+#         cursor.close()
+#         conn.close()
+#         raise ValueError("User already exists. Coupon not issued. Please try a different name.")
 
-    # Insert coupon details into the database (store admin_username in pin field for tracking)
-    cursor.execute(
-        "INSERT INTO coupons (full_name, amount, balance, qr_code, pin) VALUES (?, ?, ?, ?, ?)",
-        (full_name, amount, amount, "", admin_username)
-    )
-    ticket_id = cursor.lastrowid
+#     # Insert coupon details into the database (store admin_username in pin field for tracking)
+#     cursor.execute(
+#         "INSERT INTO coupons (full_name, amount, balance, qr_code, pin) VALUES (?, ?, ?, ?, ?)",
+#         (full_name, amount, amount, "", admin_username)
+#     )
+#     ticket_id = cursor.lastrowid
 
-    base_url = request.host_url.rstrip("/")
-    qr_url = f"{base_url}/scan/{ticket_id}"
+#     base_url = request.host_url.rstrip("/")
+#     qr_url = f"{base_url}/scan/{ticket_id}"
 
-    # Generate QR code URL for authenticator
-    qr_code_url = f"https://funfair2026.herokuapp.com/scan/{ticket_id}"
+#     # Generate QR code URL for authenticator
+#     qr_code_url = f"https://funfair2026.herokuapp.com/scan/{ticket_id}"
     
 
     # Generate QR code for the coupon with the URL
@@ -511,6 +555,7 @@ def issue_coupon(full_name, amount, admin_username):
     # Save QR code image to a BytesIO buffer
     # buffered = BytesIO()
     # new_img.save(buffered, format="PNG")
+
     qr = qrcode.QRCode(
     version=None,
     error_correction=ERROR_CORRECT_H,
