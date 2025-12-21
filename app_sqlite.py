@@ -203,144 +203,144 @@ def create_table_if_not_exists():
 # -----------------------------
 # Visitors
 # -----------------------------
-def add_visitors(ticket_id, full_name, amount, balance, qr_code, pin, performed_by="system"):
-    try:
-        with sqlite3.connect(DATABASE) as conn:
-            with closing(conn.cursor()) as cursor:
-                cursor.execute(
-                    "INSERT INTO visitors (ticket_id, full_name, amount, balance, qr_code, pin, issue_date) VALUES (?, ?, ?, ?, ?, ?, date('now'))",
-                    (ticket_id, full_name, amount, balance, qr_code, pin)
-                )
-            conn.commit()
-        add_audit_log("ADD", performed_by, "visitors", ticket_id)
-        return True
-    except Exception as e:
-        add_system_log(f"Visitor DB Error: {e}", "ERROR")
-        return False
+# def add_visitors(ticket_id, full_name, amount, balance, qr_code, pin, performed_by="system"):
+#     try:
+#         with sqlite3.connect(DATABASE) as conn:
+#             with closing(conn.cursor()) as cursor:
+#                 cursor.execute(
+#                     "INSERT INTO visitors (ticket_id, full_name, amount, balance, qr_code, pin, issue_date) VALUES (?, ?, ?, ?, ?, ?, date('now'))",
+#                     (ticket_id, full_name, amount, balance, qr_code, pin)
+#                 )
+#             conn.commit()
+#         add_audit_log("ADD", performed_by, "visitors", ticket_id)
+#         return True
+#     except Exception as e:
+#         add_system_log(f"Visitor DB Error: {e}", "ERROR")
+#         return False
 
-def get_visitors():
-    with sqlite3.connect(DATABASE) as conn:
-        with closing(conn.cursor()) as cursor:
-            cursor.execute("SELECT * FROM visitors ORDER BY issue_date DESC")
-            return cursor.fetchall()
+# def get_visitors():
+#     with sqlite3.connect(DATABASE) as conn:
+#         with closing(conn.cursor()) as cursor:
+#             cursor.execute("SELECT * FROM visitors ORDER BY issue_date DESC")
+#             return cursor.fetchall()
 
-# -----------------------------
-# Corporates
-# -----------------------------
-def add_corporate(company_name, stall_count, total_revenue, contact_person, stall_name, contact_email, performed_by="system"):
-    try:
-        with sqlite3.connect(DATABASE) as conn:
-            with closing(conn.cursor()) as cursor:
-                cursor.execute(
-                    "INSERT INTO corporates (company_name, stall_count, total_revenue, contact_person, stall_name, contact_email, created_at) VALUES (?, ?, ?, ?, ?, ?, date('now'))",
-                    (company_name, stall_count, total_revenue, contact_person, stall_name, contact_email)
-                )
-            conn.commit()
-        add_audit_log("ADD", performed_by, "corporates", company_name)
-        return True
-    except Exception as e:
-        add_system_log(f"Corporate DB Error: {e}", "ERROR")
-        return False
+# # -----------------------------
+# # Corporates
+# # -----------------------------
+# def add_corporate(company_name, stall_count, total_revenue, contact_person, stall_name, contact_email, performed_by="system"):
+#     try:
+#         with sqlite3.connect(DATABASE) as conn:
+#             with closing(conn.cursor()) as cursor:
+#                 cursor.execute(
+#                     "INSERT INTO corporates (company_name, stall_count, total_revenue, contact_person, stall_name, contact_email, created_at) VALUES (?, ?, ?, ?, ?, ?, date('now'))",
+#                     (company_name, stall_count, total_revenue, contact_person, stall_name, contact_email)
+#                 )
+#             conn.commit()
+#         add_audit_log("ADD", performed_by, "corporates", company_name)
+#         return True
+#     except Exception as e:
+#         add_system_log(f"Corporate DB Error: {e}", "ERROR")
+#         return False
 
-def get_corporates():
-    with sqlite3.connect(DATABASE) as conn:
-        with closing(conn.cursor()) as cursor:
-            cursor.execute("SELECT * FROM corporates ORDER BY created_at DESC")
-            return cursor.fetchall()
+# def get_corporates():
+#     with sqlite3.connect(DATABASE) as conn:
+#         with closing(conn.cursor()) as cursor:
+#             cursor.execute("SELECT * FROM corporates ORDER BY created_at DESC")
+#             return cursor.fetchall()
 
-# -----------------------------
-# Payments
-# -----------------------------
-def add_payment(ticket_id, amount, payment_mode, reference_id, performed_by="system"):
-    try:
-        with sqlite3.connect(DATABASE) as conn:
-            with closing(conn.cursor()) as cursor:
-                cursor.execute(
-                    "INSERT INTO payments (ticket_id, amount, payment_mode, reference_id, payment_date) VALUES (?, ?, ?, ?, date('now'))",
-                    (ticket_id, amount, payment_mode, reference_id)
-                )
-            conn.commit()
-        add_audit_log("ADD", performed_by, "payments", ticket_id)
-        return True
-    except Exception as e:
-        add_system_log(f"Payment DB Error: {e}", "ERROR")
-        return False
+# # -----------------------------
+# # Payments
+# # -----------------------------
+# def add_payment(ticket_id, amount, payment_mode, reference_id, performed_by="system"):
+#     try:
+#         with sqlite3.connect(DATABASE) as conn:
+#             with closing(conn.cursor()) as cursor:
+#                 cursor.execute(
+#                     "INSERT INTO payments (ticket_id, amount, payment_mode, reference_id, payment_date) VALUES (?, ?, ?, ?, date('now'))",
+#                     (ticket_id, amount, payment_mode, reference_id)
+#                 )
+#             conn.commit()
+#         add_audit_log("ADD", performed_by, "payments", ticket_id)
+#         return True
+#     except Exception as e:
+#         add_system_log(f"Payment DB Error: {e}", "ERROR")
+#         return False
 
-def get_payments():
-    with sqlite3.connect(DATABASE) as conn:
-        with closing(conn.cursor()) as cursor:
-            cursor.execute("SELECT * FROM payments ORDER BY payment_date DESC")
-            return cursor.fetchall()
+# def get_payments():
+#     with sqlite3.connect(DATABASE) as conn:
+#         with closing(conn.cursor()) as cursor:
+#             cursor.execute("SELECT * FROM payments ORDER BY payment_date DESC")
+#             return cursor.fetchall()
 
-# -----------------------------
-# Admin Users
-# -----------------------------
-def add_admin_user(username, password, role, performed_by="system"):
-    try:
-        with sqlite3.connect(DATABASE) as conn:
-            with closing(conn.cursor()) as cursor:
-                cursor.execute(
-                    "INSERT INTO admin_users (username, password, role) VALUES (?, ?, ?)",
-                    (username, password, role)
-                )
-            conn.commit()
-        add_audit_log("ADD", performed_by, "admin_users", username)
-        return True
-    except Exception as e:
-        add_system_log(f"Admin DB Error: {e}", "ERROR")
-        return False
+# # -----------------------------
+# # Admin Users
+# # -----------------------------
+# def add_admin_user(username, password, role, performed_by="system"):
+#     try:
+#         with sqlite3.connect(DATABASE) as conn:
+#             with closing(conn.cursor()) as cursor:
+#                 cursor.execute(
+#                     "INSERT INTO admin_users (username, password, role) VALUES (?, ?, ?)",
+#                     (username, password, role)
+#                 )
+#             conn.commit()
+#         add_audit_log("ADD", performed_by, "admin_users", username)
+#         return True
+#     except Exception as e:
+#         add_system_log(f"Admin DB Error: {e}", "ERROR")
+#         return False
 
-def get_admin_users():
-    with sqlite3.connect(DATABASE) as conn:
-        with closing(conn.cursor()) as cursor:
-            cursor.execute("SELECT * FROM admin_users ORDER BY id DESC")
-            return cursor.fetchall()
+# def get_admin_users():
+#     with sqlite3.connect(DATABASE) as conn:
+#         with closing(conn.cursor()) as cursor:
+#             cursor.execute("SELECT * FROM admin_users ORDER BY id DESC")
+#             return cursor.fetchall()
 
-# -----------------------------
-# Audit Logs
-# -----------------------------
-def add_audit_log(action, performed_by, table_name, record_id):
-    try:
-        with sqlite3.connect(DATABASE) as conn:
-            with closing(conn.cursor()) as cursor:
-                cursor.execute(
-                    "INSERT INTO audit_logs (action, performed_by, table_name, record_id, timestamp) VALUES (?, ?, ?, ?, datetime('now'))",
-                    (action, performed_by, table_name, record_id)
-                )
-            conn.commit()
-        return True
-    except Exception as e:
-        add_system_log(f"Audit Log DB Error: {e}", "ERROR")
-        return False
+# # -----------------------------
+# # Audit Logs
+# # -----------------------------
+# def add_audit_log(action, performed_by, table_name, record_id):
+#     try:
+#         with sqlite3.connect(DATABASE) as conn:
+#             with closing(conn.cursor()) as cursor:
+#                 cursor.execute(
+#                     "INSERT INTO audit_logs (action, performed_by, table_name, record_id, timestamp) VALUES (?, ?, ?, ?, datetime('now'))",
+#                     (action, performed_by, table_name, record_id)
+#                 )
+#             conn.commit()
+#         return True
+#     except Exception as e:
+#         add_system_log(f"Audit Log DB Error: {e}", "ERROR")
+#         return False
 
-def get_audit_logs():
-    with sqlite3.connect(DATABASE) as conn:
-        with closing(conn.cursor()) as cursor:
-            cursor.execute("SELECT * FROM audit_logs ORDER BY timestamp DESC")
-            return cursor.fetchall()
+# def get_audit_logs():
+#     with sqlite3.connect(DATABASE) as conn:
+#         with closing(conn.cursor()) as cursor:
+#             cursor.execute("SELECT * FROM audit_logs ORDER BY timestamp DESC")
+#             return cursor.fetchall()
 
-# -----------------------------
-# System Logs
-# -----------------------------
-def add_system_log(message, level="INFO"):
-    try:
-        with sqlite3.connect(DATABASE) as conn:
-            with closing(conn.cursor()) as cursor:
-                cursor.execute(
-                    "INSERT INTO system_logs (message, level, timestamp) VALUES (?, ?, datetime('now'))",
-                    (message, level)
-                )
-            conn.commit()
-        return True
-    except:
-        # Cannot log system log error
-        return False
+# # -----------------------------
+# # System Logs
+# # -----------------------------
+# def add_system_log(message, level="INFO"):
+#     try:
+#         with sqlite3.connect(DATABASE) as conn:
+#             with closing(conn.cursor()) as cursor:
+#                 cursor.execute(
+#                     "INSERT INTO system_logs (message, level, timestamp) VALUES (?, ?, datetime('now'))",
+#                     (message, level)
+#                 )
+#             conn.commit()
+#         return True
+#     except:
+#         # Cannot log system log error
+#         return False
 
-def get_system_logs():
-    with sqlite3.connect(DATABASE) as conn:
-        with closing(conn.cursor()) as cursor:
-            cursor.execute("SELECT * FROM system_logs ORDER BY timestamp DESC")
-            return cursor.fetchall()
+# def get_system_logs():
+#     with sqlite3.connect(DATABASE) as conn:
+#         with closing(conn.cursor()) as cursor:
+#             cursor.execute("SELECT * FROM system_logs ORDER BY timestamp DESC")
+#             return cursor.fetchall()
 
 
 def apply_schema_upgrades():
