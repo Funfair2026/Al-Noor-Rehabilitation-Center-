@@ -485,7 +485,7 @@ def scan_view(ticket_id):
         "qr_view.html",
         full_name=row["full_name"],
         ticket_id=ticket_id,
-        balance=row["balance"]
+        balance=row["balance"],
         qr_code=row["qr_code"]
     )
 
