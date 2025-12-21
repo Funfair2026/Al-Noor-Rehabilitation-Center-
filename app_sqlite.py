@@ -472,7 +472,7 @@ def scan_view(ticket_id):
     cursor = conn.cursor()
 
     cursor.execute(
-        "SELECT full_name, balance FROM coupons WHERE ticket_id = ?",
+        "SELECT full_name, balance, qr_code FROM coupons WHERE ticket_id = ?",
         (ticket_id,)
     )
     row = cursor.fetchone()
@@ -486,6 +486,7 @@ def scan_view(ticket_id):
         full_name=row["full_name"],
         ticket_id=ticket_id,
         balance=row["balance"]
+        qr_code=row["qr_code"]
     )
 
 # def issue_coupon(full_name, amount, admin_username):

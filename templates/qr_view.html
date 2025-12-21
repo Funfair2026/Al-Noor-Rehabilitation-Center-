@@ -19,6 +19,11 @@
             max-width: 400px;
             margin: auto;
         }
+        .qr-image img {
+            max-width: 250px;
+            height: auto;
+            margin-top: 20px;
+        }
         .print-btn {
             margin-top: 20px;
             padding: 10px 20px;
@@ -29,7 +34,6 @@
             border-radius: 8px;
             cursor: pointer;
         }
-
         /* Hide button while printing */
         @media print {
             .print-btn {
@@ -47,7 +51,12 @@
         <p><strong>Ticket ID:</strong> {{ ticket_id }}</p>
         <p><strong>Balance:</strong> AED {{ balance }}</p>
 
-        <!-- ✅ ADD THIS BUTTON -->
+        <!-- QR Code Image -->
+        <div class="qr-image">
+            <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code">
+        </div>
+
+        <!-- Print Button -->
         <button class="print-btn" onclick="window.print()">
             🖨️ Print QR
         </button>
