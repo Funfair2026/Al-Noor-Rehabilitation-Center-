@@ -883,13 +883,20 @@ from datetime import datetime
 # -------------------
 # Admins routes
 # -------------------
-@app.route('/admin_login', methods=['POST'])
+#@app.route('/admin_login', methods=['POST'])
+@app.route('/admin_login', methods=['GET', 'POST'])
 @limiter.limit("10 per 15 minutes")
 def admin_login():
+    if request.method == 'GET':
+        return render_template('admin_login.html')
+    
+    #POST METHOD 
     try:
-        data = request.get_json()
-        username = data.get('username', '').strip()
-        password = data.get('password', '')
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '')
+        #data = request.get_json()
+        #username = data.get('username', '').strip()
+        #password = data.get('password', '')
         
         if not username or not password:
             return jsonify({"error": "Username and password are required"}), 400
